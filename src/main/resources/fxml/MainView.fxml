@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hylir.receipt.controller.MainController">
+    <children>
+        <!-- 标题栏 -->
+        <HBox styleClass="title-bar">
+            <children>
+                <Label styleClass="title-label" text="回单采集终端 - Receipt Capture Agent"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label styleClass="version-label" text="v1.0.0"/>
+            </children>
+            <VBox.margin>
+                <Insets bottom="10.0"/>
+            </VBox.margin>
+        </HBox>
+
+        <!-- 主内容区域 -->
+        <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+            <children>
+                <!-- 左侧：图片显示区域 -->
+                <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label styleClass="section-label" text="实时影像"/>
+                        <Pane fx:id="imagePane" styleClass="image-container">
+                            <children>
+                                <ImageView fx:id="imageView" styleClass="image-view"/>
+                            </children>
+                        </Pane>
+                        <VBox spacing="10.0">
+                            <children>
+                                <!-- 设备选择（整洁排列，带提示） -->
+                                <HBox spacing="8.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="设备:"/>
+                                        <ComboBox fx:id="deviceComboBox" prefWidth="220.0" promptText="选择摄像头设备">
+                                            <tooltip>
+                                                <Tooltip text="请选择要使用的摄像头设备"/>
+                                            </tooltip>
+                                        </ComboBox>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button fx:id="previewButton" mnemonicParsing="false" styleClass="secondary-button" text="预览"/>
+                                    </children>
+                                </HBox>
+
+                                <!-- 操作按钮（突显主操作，增加间距） -->
+                                <HBox spacing="12.0" alignment="CENTER">
+                                    <children>
+                                        <Button fx:id="autoDetectButton" mnemonicParsing="false" styleClass="success-button" text="自动检测 (F6)" prefWidth="140.0"/>
+                                        <ProgressBar fx:id="progressBar" prefWidth="220.0" progress="0.0"/>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+
+                <!-- 右侧：控制面板（卡片化，支持滚动） -->
+                <VBox spacing="10.0" prefWidth="360.0">
+                    <children>
+                        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="controls-scroll">
+                            <content>
+                                <VBox spacing="12.0" styleClass="controls-container">
+                                    <padding>
+                                        <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+                                    </padding>
+                                    <children>
+                                        <!-- 卡片：送货单号 -->
+                                        <VBox spacing="8.0" styleClass="card">
+                                            <children>
+                                                <Label styleClass="card-title" text="送货单号"/>
+                                                <TextField fx:id="receiptNumberField" promptText="自动识别或手动输入" styleClass="text-field"/>
+                                                <HBox spacing="10.0">
+                                                    <children>
+                                                        <Button fx:id="uploadButton" disable="true" mnemonicParsing="false" styleClass="success-button" text="上传"/>
+                                                        <Button fx:id="manualInputButton" disable="true" mnemonicParsing="false" styleClass="secondary-button" text="手动输入"/>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- 卡片：操作日志 -->
+                                        <VBox spacing="8.0" styleClass="card" VBox.vgrow="ALWAYS">
+                                            <children>
+                                                <Label styleClass="card-title" text="操作日志"/>
+                                                <TextArea fx:id="statusArea" editable="false" wrapText="true" prefRowCount="20" styleClass="text-area" VBox.vgrow="ALWAYS"/>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- 卡片：设备与状态 -->
+                                        <VBox spacing="8.0" styleClass="card">
+                                            <children>
+                                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label styleClass="info-label" text="当前设备："/>
+                                                        <Label fx:id="currentDeviceLabel" styleClass="info-label" text="GK122"/>
+                                                    </children>
+                                                </HBox>
+                                                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label styleClass="info-label" text="状态："/>
+                                                        <Label fx:id="statusLabel" styleClass="info-label" text="就绪"/>
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+                    </children>
+                </VBox>
+            </children>
+            <VBox.margin>
+                <Insets left="20.0" right="20.0"/>
+            </VBox.margin>
+        </HBox>
+    </children>
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+</VBox>
