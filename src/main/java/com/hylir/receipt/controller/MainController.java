@@ -5,6 +5,7 @@ import com.hylir.receipt.model.CaptureResult;
 import com.hylir.receipt.service.BarcodeRecognitionService;
 import com.hylir.receipt.service.CameraService;
 import com.hylir.receipt.service.UploadService;
+import com.hylir.receipt.util.TempFileCleaner;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -101,12 +102,14 @@ public class MainController implements Initializable {
     private volatile boolean autoDetectInProgress = false;
     private long lastAutoDetectTime = 0L;
     private static final long AUTO_DETECT_INTERVAL_MS = 2000L; // 每2秒最多触发一次
-    private static final String PREVIEW_TEMP_DIR = System.getProperty("java.io.tmpdir") + File.separator + "receipt-capture";
+    private static final String PREVIEW_TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"), "receipt-capture").toString();
     private static final int MAX_PREVIEW_IMAGES = 10; // 最多保存10张预览图片
+    private static final long TEMP_FILE_EXPIRE_MS = 2 * 60 * 1000L; // 临时文件过期时间：2分钟
     private int previewImageCount = 0; // 预览图片计数器
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        System.out.println("=== MainController.initialize 开始执行 ==="); // 在这里设置断点测试
         try {
             // 初始化服务
             initializeServices();
@@ -116,6 +119,9 @@ public class MainController implements Initializable {
 
             // 测试连接
             testConnections();
+
+            // 启动时清理过期临时文件
+            TempFileCleaner.cleanupExpiredFiles(PREVIEW_TEMP_DIR);
 
             logger.info("主控制器初始化完成");
 
@@ -349,6 +355,10 @@ public class MainController implements Initializable {
                                         // 保存原始帧图片到临时文件
                                         Path tmpDir = Paths.get(PREVIEW_TEMP_DIR);
                                         if (!Files.exists(tmpDir)) Files.createDirectories(tmpDir);
+                                        
+                                        // 清理过期文件（只保留最近2分钟）
+                                        TempFileCleaner.cleanupExpiredFiles(tmpDir);
+                                        
                                         String timestamp = String.valueOf(System.currentTimeMillis());
                                         String rawPath = PREVIEW_TEMP_DIR + File.separator + "preview_raw_" + timestamp + ".png";
                                         ImageIO.write(frameImg, "PNG", new File(rawPath));
@@ -373,7 +383,7 @@ public class MainController implements Initializable {
                                         }
 
                                         // 识别条码（在后台执行）
-                                        String code = barcodeService.recognizeBarcodeWithRetry(toRecognize, 3);
+                                        String code = barcodeService.recognize(toRecognize, 3);
                                         if (code != null && barcodeService.isValidReceiptNumber(code)) {
                                             Platform.runLater(() -> {
                                                 receiptNumberField.setText(code);
@@ -588,7 +598,7 @@ public class MainController implements Initializable {
 
                     // 识别条码
                     updateMessage("正在识别条码...");
-                    String barcode = barcodeService.recognizeBarcodeWithRetry(bufferedImage, 3);
+                    String barcode = barcodeService.recognize(bufferedImage, 3);
 
                     // 创建结果对象
                     CaptureResult result = new CaptureResult();

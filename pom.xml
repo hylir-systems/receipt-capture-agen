@@ -55,6 +55,13 @@
             <version>${zxing.version}</version>
         </dependency>
 
+        <!-- Aspose barcode barcode 处理库 -->
+        <dependency>
+            <groupId>com.aspose</groupId>
+            <artifactId>aspose-barcode</artifactId>
+            <version>21.8</version>
+        </dependency>
+
         <!-- ===== HTTP ===== -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -127,6 +134,9 @@
                 <version>3.11.0</version>
                 <configuration>
                     <release>${java.version}</release>
+                    <!-- 确保包含调试信息 -->
+                    <debug>true</debug>
+                    <debuglevel>lines,vars,source</debuglevel>
                 </configuration>
             </plugin>
             <plugin>

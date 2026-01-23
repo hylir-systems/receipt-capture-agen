@@ -2,6 +2,8 @@ package com.hylir.receipt.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +34,16 @@ public class AppConfig {
     }
 
     /**
-     * 加载配置文件
+     * 加载配置文件（使用 UTF-8 编码）
      */
     private static void loadConfig() {
         try (InputStream inputStream = AppConfig.class.getResourceAsStream(CONFIG_FILE)) {
             if (inputStream != null) {
-                properties.load(inputStream);
-                logger.info("配置文件加载成功: {}", CONFIG_FILE);
+                // 使用 UTF-8 编码读取配置文件
+                try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                    properties.load(reader);
+                    logger.info("配置文件加载成功: {} (UTF-8)", CONFIG_FILE);
+                }
             } else {
                 logger.warn("未找到配置文件 {}, 使用默认配置", CONFIG_FILE);
             }

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hylir.receipt.config.AppConfig;
 import com.hylir.receipt.service.DocumentScanner;
+import com.hylir.receipt.util.TempFileCleaner;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -148,6 +149,9 @@ public class CameraStreamService {
             if (!Files.exists(tempPath)) {
                 Files.createDirectories(tempPath);
             }
+
+            // 清理过期文件（只保留最近2分钟）
+            TempFileCleaner.cleanupExpiredFiles(tempPath);
 
             BufferedImage toSave = bufferedImage;
             boolean corrected = false;

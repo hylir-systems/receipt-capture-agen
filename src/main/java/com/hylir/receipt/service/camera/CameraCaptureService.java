@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hylir.receipt.config.AppConfig;
+import com.hylir.receipt.util.TempFileCleaner;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -57,6 +58,9 @@ public class CameraCaptureService {
         try {
             // 确保临时目录存在
             ensureTempDirExists();
+
+            // 清理过期文件（只保留最近2分钟）
+            TempFileCleaner.cleanupExpiredFiles(CameraConstants.TEMP_DIR);
 
             String imagePath = CameraConstants.TEMP_DIR + File.separator + "captured_" + System.currentTimeMillis() + ".png";
 

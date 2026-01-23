@@ -24,6 +24,7 @@ public class ReceiptCaptureApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        System.out.println("=== start 方法开始执行 ==="); // 在这里设置断点测试
         try {
             // 确保在这里打断点测试
             System.out.println("JavaFX Thread: " + Thread.currentThread().getName());
@@ -60,6 +61,7 @@ public class ReceiptCaptureApplication extends Application {
     }
 
     public static void main(String[] args) {
+        System.out.println("=== 程序开始执行 ==="); // 在这里设置断点测试
         launch(args);
     }
 }
