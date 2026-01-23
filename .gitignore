@@ -1,0 +1,65 @@
+# ===========================================
+# Git Ignore for Java Maven Project
+# ===========================================
+
+# -------------------
+# 编译输出目录
+# -------------------
+target/
+build/
+out/
+
+# -------------------
+# IDE 配置
+# -------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+
+# -------------------
+# IDE 特定文件
+# -------------------
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# -------------------
+# 日志文件
+# -------------------
+*.log
+logs/
+
+# -------------------
+# 测试报告
+# -------------------
+surefire-reports/
+test-output/
+
+# -------------------
+# 临时文件
+# -------------------
+*.tmp
+*.temp
+tmp/
+temp/
+
+# -------------------
+# Maven
+# -------------------
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+
+# -------------------
+# 凭据配置（不要提交敏感信息）
+# -------------------
+*.properties
+!src/main/resources/config/application.properties
+
