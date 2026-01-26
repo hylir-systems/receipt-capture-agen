@@ -55,14 +55,6 @@
             <version>${zxing.version}</version>
         </dependency>
 
-        <!-- Aspose barcode barcode 处理库 -->
-        <dependency>
-            <groupId>com.aspose</groupId>
-            <artifactId>aspose-barcode</artifactId>
-            <version>21.8</version>
-        </dependency>
-
-        <!-- ===== HTTP ===== -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
@@ -120,7 +112,6 @@
             <version>5.10.1</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <!-- ================== 构建 ================== -->
@@ -215,7 +206,5 @@
             <id>central</id>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
     </repositories>
-
 </project>
