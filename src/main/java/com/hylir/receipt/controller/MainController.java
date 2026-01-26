@@ -1,7 +1,6 @@
 package com.hylir.receipt.controller;
 
 import com.hylir.receipt.config.AppConfig;
-import com.hylir.receipt.model.CaptureResult;
 import com.hylir.receipt.service.BarcodeRecognitionService;
 import com.hylir.receipt.service.CameraService;
 import com.hylir.receipt.service.UploadService;
@@ -20,8 +19,13 @@ import javafx.scene.image.PixelBuffer;
 import java.nio.IntBuffer;
 
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,15 +50,11 @@ public class MainController implements Initializable {
     @FXML
     private Pane imagePane;
     @FXML
-    private TextField receiptNumberField;
-    @FXML
     private TextArea statusArea;
     @FXML
-    private Button uploadButton;
-    @FXML
-    private Button manualInputButton;
-    @FXML
     private Button previewButton;
+    @FXML
+    private Button resetButton;
     @FXML
     private ComboBox<String> deviceComboBox;
     @FXML
@@ -65,6 +65,8 @@ public class MainController implements Initializable {
     private ProgressBar progressBar;
     @FXML
     private Button settingsButton;
+    @FXML
+    private FlowPane successListContainer;
 
     // 服务组件
     private CameraService cameraService;
@@ -74,8 +76,6 @@ public class MainController implements Initializable {
     // 自动采集服务
     private AutoCaptureService autoCaptureService;
 
-    // 当前采集结果
-    private CaptureResult currentResult;
     // 实时流使用的可写图像缓存
     private WritableImage streamImage = null;
     private PixelBuffer<IntBuffer> pixelBuffer = null;
@@ -136,12 +136,21 @@ public class MainController implements Initializable {
         // 创建帧变化检测器（只负责判断是否出现新 A4 纸）
         FrameChangeDetector changeDetector = new FrameChangeDetector();
         
-        // 获取输出目录
+        // 获取输出目录（转换为绝对路径，避免相对路径问题）
         String outputDirPath = AppConfig.getA4SaveFolder();
-        java.io.File outputDir = new java.io.File(outputDirPath);
+        java.io.File outputDir = new java.io.File(outputDirPath).getAbsoluteFile();
+        // 确保目录存在
+        outputDir.mkdirs();
         
-        // 创建处理管道（内部包含：A4矫正 → 条码识别 → 去重 → 文件保存）
-        CapturePipeline capturePipeline = new CapturePipeline(barcodeService, outputDir);
+        // 创建处理管道（内部包含：A4矫正 → 条码识别 → 去重 → 文件保存 → 自动上传）
+        CapturePipeline capturePipeline = new CapturePipeline(barcodeService, outputDir, uploadService);
+        
+        // 设置上传成功回调
+        capturePipeline.setUploadSuccessCallback((barcode, imagePath, uploadUrl) -> {
+            Platform.runLater(() -> {
+                showUploadSuccess(barcode, imagePath, uploadUrl);
+            });
+        });
         
         // 组装自动采集服务
         autoCaptureService = new AutoCaptureService(changeDetector, capturePipeline);
@@ -172,6 +181,7 @@ public class MainController implements Initializable {
             message = "✓ 自动采集成功: 条码=" + result.getBarcode() + 
                      ", 文件=" + result.getFilePath();
             appendStatus(message);
+            // 注意：上传成功提示会通过 CapturePipeline 的上传成功回调显示
             // 成功日志重置去重计数
             lastLogMessage = "";
             duplicateLogCount = 0;
@@ -224,12 +234,141 @@ public class MainController implements Initializable {
     }
 
     /**
+     * 显示上传成功提示（添加到历史列表，不自动消失）
+     * 布局：缩略图在上，单据号在下（完整显示）
+     * 使用上传后的URL来加载缩略图，确认文件已上传
+     * 
+     * @param barcode 单号
+     * @param imagePath 本地图片路径（备用）
+     * @param uploadUrl 上传后的文件URL（优先使用）
+     */
+    private void showUploadSuccess(String barcode, String imagePath, String uploadUrl) {
+        if (successListContainer == null) {
+            return;
+        }
+        
+        Platform.runLater(() -> {
+            try {
+                // 获取当前时间戳（格式：HH:mm:ss）
+                java.time.LocalTime now = java.time.LocalTime.now();
+                String timestamp = String.format("%02d:%02d:%02d", 
+                    now.getHour(), now.getMinute(), now.getSecond());
+                
+                // 创建历史记录条目容器（垂直布局：缩略图在上，单号在下）
+                VBox historyItem = new VBox();
+                historyItem.setSpacing(6.0);
+                historyItem.setAlignment(javafx.geometry.Pos.TOP_CENTER);
+                historyItem.getStyleClass().add("history-item");
+                historyItem.setMinWidth(150);
+                historyItem.setMaxWidth(150);
+                
+                // 缩略图（上方）
+                ImageView thumbnail = new ImageView();
+                thumbnail.getStyleClass().add("history-thumbnail");
+                thumbnail.setFitWidth(130);
+                thumbnail.setFitHeight(90);
+                thumbnail.setPreserveRatio(true);
+                thumbnail.setCursor(javafx.scene.Cursor.HAND); // 鼠标悬停显示手型
+                
+                // 保存图片信息，用于点击时显示
+                final String finalBarcode = barcode;
+                final String finalImagePath = imagePath;
+                final String finalUploadUrl = uploadUrl;
+                final String finalTimestamp = timestamp;
+                
+                // 加载缩略图：优先使用上传后的URL，如果URL无效则使用本地文件
+                try {
+                    if (uploadUrl != null && !uploadUrl.trim().isEmpty()) {
+                        // 使用上传后的URL加载缩略图，确认文件已上传
+                        logger.info("使用上传后的URL加载缩略图: {}", uploadUrl);
+                        javafx.scene.image.Image image = new javafx.scene.image.Image(
+                            uploadUrl, 
+                            130, 90, true, true, true);
+                        thumbnail.setImage(image);
+                    } else {
+                        // 备用方案：使用本地文件
+                        logger.warn("上传URL为空，使用本地文件作为缩略图");
+                        java.io.File imageFile = new java.io.File(imagePath);
+                        if (imageFile.exists()) {
+                            javafx.scene.image.Image image = new javafx.scene.image.Image(
+                                imageFile.toURI().toString(), 
+                                130, 90, true, true, true);
+                            thumbnail.setImage(image);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("加载缩略图失败: {}, 尝试使用本地文件", e.getMessage());
+                    // 如果URL加载失败，尝试使用本地文件
+                    try {
+                        java.io.File imageFile = new java.io.File(imagePath);
+                        if (imageFile.exists()) {
+                            javafx.scene.image.Image image = new javafx.scene.image.Image(
+                                imageFile.toURI().toString(), 
+                                130, 90, true, true, true);
+                            thumbnail.setImage(image);
+                        }
+                    } catch (Exception e2) {
+                        logger.error("加载本地缩略图也失败: {}", e2.getMessage());
+                    }
+                }
+                
+                // 添加点击事件：显示放大图片对话框
+                thumbnail.setOnMouseClicked(e -> {
+                    Window mainWindow = successListContainer.getScene().getWindow();
+                    ImageDetailController.showImageDetailDialog(mainWindow, finalBarcode, 
+                        finalImagePath, finalUploadUrl, finalTimestamp);
+                });
+                
+                // 信息区域（下方）
+                VBox infoBox = new VBox();
+                infoBox.setSpacing(3.0);
+                infoBox.setAlignment(javafx.geometry.Pos.CENTER);
+                infoBox.setMaxWidth(Double.MAX_VALUE);
+                
+                // 单号标签（完整显示，支持换行）
+                Label barcodeLabel = new Label(barcode);
+                barcodeLabel.getStyleClass().add("history-barcode");
+                barcodeLabel.setWrapText(true);
+                barcodeLabel.setAlignment(javafx.geometry.Pos.CENTER);
+                barcodeLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                barcodeLabel.setMaxWidth(140);
+                barcodeLabel.setMinHeight(Label.USE_PREF_SIZE);
+                
+                // 时间戳标签
+                Label timeLabel = new Label(timestamp);
+                timeLabel.getStyleClass().add("history-time");
+                
+                infoBox.getChildren().addAll(barcodeLabel, timeLabel);
+                
+                // 组装条目：缩略图 - 信息（单号+时间）
+                historyItem.getChildren().addAll(thumbnail, infoBox);
+                historyItem.setPadding(new javafx.geometry.Insets(10, 8, 10, 8));
+                
+                // 添加到列表顶部（最新的在最上面）
+                successListContainer.getChildren().add(0, historyItem);
+                
+                // 限制最大显示数量（保留最近30条）
+                if (successListContainer.getChildren().size() > 30) {
+                    successListContainer.getChildren().remove(30, successListContainer.getChildren().size());
+                }
+                
+            } catch (Exception e) {
+                logger.error("显示上传成功提示失败", e);
+            }
+        });
+    }
+    
+
+    /**
      * 初始化UI组件
      */
     private void initializeUI() {
         progressBar.setVisible(false);
-        uploadButton.setDisable(true);
-        receiptNumberField.setEditable(false);
+        
+        // 初始化成功列表容器
+        if (successListContainer != null) {
+            successListContainer.getChildren().clear();
+        }
 
         // 初始化设备选择下拉框
         initializeDeviceSelection();
@@ -244,10 +383,9 @@ public class MainController implements Initializable {
         } catch (Exception ignored) {
         }
 
-        // 设置快捷键
-        uploadButton.setOnAction(e -> handleUpload());
-        manualInputButton.setOnAction(e -> handleManualInput());
+        // 设置事件处理器
         previewButton.setOnAction(e -> handlePreview());
+        resetButton.setOnAction(e -> handleReset());
         settingsButton.setOnAction(e -> handleSettings());
 
         // 添加键盘快捷键支持
@@ -435,6 +573,7 @@ public class MainController implements Initializable {
                         if (!"停止预览".equals(previewButton.getText())) {
                             previewButton.setText("停止预览");
                             previewButton.setDisable(false);
+                            resetButton.setDisable(false);
 
                             boolean usingRealCamera = isRealCameraAvailable();
                             String cameraType = usingRealCamera ? "真实摄像头" : "模拟预览";
@@ -507,7 +646,41 @@ public class MainController implements Initializable {
         Platform.runLater(() -> {
             previewButton.setText("预览");
             previewButton.setDisable(false);
+            resetButton.setDisable(true);
         });
+    }
+
+    /**
+     * 处理重置按钮点击
+     * 重置自动预览状态，重新开始自动采集流程
+     */
+    @FXML
+    private void handleReset() {
+        if (!isPreviewActive) {
+            appendStatus("⚠ 预览未启动，无法重置");
+            return;
+        }
+
+        appendStatus("🔄 正在重置自动预览...");
+        
+        // 重新创建上传服务，读取最新的配置
+        uploadService = new UploadService();
+        
+        // 重置自动采集服务（重新启用会重置内部状态）
+        if (autoCaptureService != null) {
+            // 先禁用，然后立即重新启用，这样会重置所有内部状态
+            autoCaptureService.disable();
+            autoCaptureService.enable();
+            
+            // 重置日志去重状态
+            lastLogMessage = "";
+            duplicateLogCount = 0;
+            lastLogTime = 0L;
+            
+            appendStatus("✓ 自动预览已重置，重新开始识别流程");
+        } else {
+            appendStatus("✗ 自动采集服务未初始化");
+        }
     }
 
     /**
@@ -551,81 +724,6 @@ public class MainController implements Initializable {
     }
 
 
-    /**
-     * 处理上传按钮点击
-     */
-    @FXML
-    private void handleUpload() {
-        if (currentResult == null) {
-            showWarningAlert("无数据", "请先拍照获取数据");
-            return;
-        }
-
-        uploadButton.setDisable(true);
-        progressBar.setVisible(true);
-        appendStatus("正在上传中...");
-
-        Task<Boolean> uploadTask = new Task<Boolean>() {
-            @Override
-            protected Boolean call() throws Exception {
-                return uploadService.uploadCaptureResult(currentResult);
-            }
-
-            @Override
-            protected void succeeded() {
-                Boolean success = getValue();
-                if (success) {
-                    appendStatus("✓ 上传成功");
-                    showInfoAlert("上传成功", "数据已成功上传到后端服务器");
-                    uploadButton.setDisable(true);
-                } else {
-                    appendStatus("✗ 上传失败");
-                    showErrorAlert("上传失败", "上传过程中出现错误，请重试");
-                    uploadButton.setDisable(false);
-                }
-                progressBar.setVisible(false);
-            }
-
-            @Override
-            protected void failed() {
-                Throwable exception = getException();
-                logger.error("上传失败", exception);
-                appendStatus("上传失败: " + exception.getMessage());
-                showErrorAlert("上传失败", "上传过程中出现错误: " + exception.getMessage());
-                uploadButton.setDisable(false);
-                progressBar.setVisible(false);
-            }
-        };
-
-        new Thread(uploadTask).start();
-    }
-
-    /**
-     * 处理手动输入按钮点击
-     */
-    @FXML
-    private void handleManualInput() {
-        if (currentResult == null) {
-            showWarningAlert("无数据", "请先拍照获取数据");
-            return;
-        }
-
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("手动输入送货单号");
-        dialog.setHeaderText("请输入送货单号");
-        dialog.setContentText("单号:");
-
-        dialog.showAndWait().ifPresent(receiptNumber -> {
-            if (!receiptNumber.trim().isEmpty()) {
-                currentResult.setReceiptNumber(receiptNumber.trim());
-                currentResult.setRecognitionSuccess(true);
-                receiptNumberField.setText(receiptNumber);
-                appendStatus("✓ 手动输入单号: " + receiptNumber);
-                uploadButton.setDisable(false);
-                manualInputButton.setDisable(true);
-            }
-        });
-    }
 
     /**
      * 添加状态信息
@@ -698,7 +796,10 @@ public class MainController implements Initializable {
         Stage primaryStage = (Stage) settingsButton.getScene().getWindow();
         SettingsController.showSettingsDialog(primaryStage);
         
-        // 设置保存后，重新初始化上传服务以使用新配置
+        // 重新加载配置，确保读取最新保存的值
+        AppConfig.reloadConfig();
+        
+        // 重新初始化上传服务以使用新配置
         uploadService = new UploadService();
         appendStatus("配置已更新，上传服务已重新初始化");
     }

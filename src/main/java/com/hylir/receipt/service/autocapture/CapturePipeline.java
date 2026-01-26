@@ -1,7 +1,9 @@
 package com.hylir.receipt.service.autocapture;
 
+import com.hylir.receipt.model.CaptureResult;
 import com.hylir.receipt.service.A4PaperDetectorHighCamera;
 import com.hylir.receipt.service.BarcodeRecognitionService;
+import com.hylir.receipt.service.UploadService;
 import org.bytedeco.javacv.Java2DFrameConverter;
 import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.bytedeco.javacv.Frame;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 单帧处理管道：
@@ -30,12 +33,28 @@ public class CapturePipeline {
     private final BarcodeRecognitionService barcodeService;
     private final BarcodeDeduplicator deduplicator;
     private final File outputDir;
+    private final UploadService uploadService;
+    
+    // 上传成功回调接口
+    public interface UploadSuccessCallback {
+        void onUploadSuccess(String barcode, String imagePath, String uploadUrl);
+    }
+    
+    private UploadSuccessCallback uploadSuccessCallback;
 
-    public CapturePipeline(BarcodeRecognitionService barcodeService, File outputDir) {
+    public CapturePipeline(BarcodeRecognitionService barcodeService, File outputDir, UploadService uploadService) {
         this.barcodeService = barcodeService;
         this.deduplicator = new BarcodeDeduplicator();
         this.outputDir = outputDir;
+        this.uploadService = uploadService;
         outputDir.mkdirs();
+    }
+    
+    /**
+     * 设置上传成功回调
+     */
+    public void setUploadSuccessCallback(UploadSuccessCallback callback) {
+        this.uploadSuccessCallback = callback;
     }
 
     public CaptureResult processFrame(int[] pixels, int width, int height) {
@@ -67,6 +86,34 @@ public class CapturePipeline {
             // 6. 保存文件
             File outputFile = new File(outputDir, barcode + ".png");
             ImageIO.write(correctedImage, "PNG", outputFile);
+
+            // 7. 自动上传回单（异步执行，不阻塞主流程）
+            if (uploadService != null) {
+                final String finalBarcode = barcode;
+                final String finalFilePath = outputFile.getAbsolutePath();
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        com.hylir.receipt.model.CaptureResult uploadResult = new com.hylir.receipt.model.CaptureResult();
+                        uploadResult.setReceiptNumber(finalBarcode);
+                        uploadResult.setImagePath(finalFilePath);
+                        uploadResult.setRecognitionSuccess(true);
+                        
+                        boolean uploadSuccess = uploadService.uploadCaptureResult(uploadResult);
+                        if (uploadSuccess) {
+                            String uploadUrl = uploadResult.getUploadUrl();
+                            logger.info("回单自动上传成功，单号: {}, URL: {}", finalBarcode, uploadUrl);
+                            // 通知上传成功回调，传递上传后的URL
+                            if (uploadSuccessCallback != null) {
+                                uploadSuccessCallback.onUploadSuccess(finalBarcode, finalFilePath, uploadUrl);
+                            }
+                        } else {
+                            logger.warn("回单自动上传失败，单号: {}, 错误: {}", finalBarcode, uploadResult.getErrorMessage());
+                        }
+                    } catch (Exception e) {
+                        logger.error("回单自动上传异常，单号: {}", finalBarcode, e);
+                    }
+                });
+            }
 
             return CaptureResult.success(barcode, outputFile.getAbsolutePath());
 
@@ -126,84 +173,6 @@ public class CapturePipeline {
             if (srcMat != null) {
                 srcMat.close();
             }
-        }
-    }
-
-    /**
-     * 裁剪右上角区域（条码区域）
-     * A4纸标准尺寸：210mm x 297mm
-     * 条码区域：宽约8cm（80mm），高约4cm（40mm），位于右上角
-     * 注意：条码在打印时间和标题下方，需要从顶部稍微下移
-     *
-     * @param image A4矫正后的图像
-     * @return 裁剪后的右上角区域图像
-     */
-    private BufferedImage cropTopRightRegion(BufferedImage image) {
-        if (image == null) {
-            return null;
-        }
-
-        try {
-            int imgWidth = image.getWidth();
-            int imgHeight = image.getHeight();
-
-            logger.debug("原图尺寸: {}x{}", imgWidth, imgHeight);
-
-            // A4纸标准尺寸比例：宽210mm，高297mm
-            // 条码区域：宽80mm（占宽度的 80/210 ≈ 38.1%），高40mm（占高度的 40/297 ≈ 13.5%）
-            // 但条码在打印时间和标题下方，需要从顶部下移约5-8%（给标题留空间）
-
-            // 计算裁剪区域（基于实际图像尺寸）
-            // 宽度：图像宽度的约40%（条码宽度8cm）
-            int cropWidth = (int) (imgWidth * 0.40);
-            // 高度：图像高度的约15%（条码高度4cm，确保包含条码）
-            int cropHeight = (int) (imgHeight * 0.2);
-
-            // 确保最小尺寸（避免裁剪区域太小）
-            cropWidth = Math.max(cropWidth, 300); // 最小宽度300像素
-            cropHeight = Math.max(cropHeight, 150); // 最小高度150像素
-
-            // 右上角位置：x = 图像宽度 - 裁剪宽度，y = 从顶部下移约6%（给打印时间和标题留空间）
-            int x = Math.max(0, imgWidth - cropWidth);
-            int y = Math.max(0, (int) (imgHeight * 0.06)); // 从顶部下移6%
-
-            // 确保裁剪区域不超出图像边界
-            if (x + cropWidth > imgWidth) {
-                cropWidth = imgWidth - x;
-            }
-            if (y + cropHeight > imgHeight) {
-                cropHeight = imgHeight - y;
-            }
-
-            // 最终边界检查：确保裁剪区域有效且足够大
-            if (cropWidth <= 0 || cropHeight <= 0 || x < 0 || y < 0 ||
-                    x + cropWidth > imgWidth || y + cropHeight > imgHeight) {
-                logger.error("裁剪区域计算错误: 原图={}x{}, 裁剪区域=({},{}) 尺寸={}x{}",
-                        imgWidth, imgHeight, x, y, cropWidth, cropHeight);
-                // 使用安全的默认值
-                cropWidth = Math.min(imgWidth / 3, 500);
-                cropHeight = Math.min(imgHeight / 5, 200);
-                x = Math.max(0, imgWidth - cropWidth);
-                y = Math.max(0, Math.min((int) (imgHeight * 0.06), imgHeight - cropHeight));
-            }
-
-            logger.debug("裁剪区域: 原图={}x{}, 裁剪区域=({},{}) 尺寸={}x{}",
-                    imgWidth, imgHeight, x, y, cropWidth, cropHeight);
-
-            // 裁剪图像
-            BufferedImage cropped = image.getSubimage(x, y, cropWidth, cropHeight);
-
-            // 创建新的BufferedImage，确保类型正确
-            BufferedImage result = new BufferedImage(cropWidth, cropHeight, BufferedImage.TYPE_INT_RGB);
-            result.getGraphics().drawImage(cropped, 0, 0, null);
-
-            logger.debug("裁剪右上角区域: 原图尺寸={}x{}, 裁剪区域=({},{}) 尺寸={}x{}",
-                    imgWidth, imgHeight, x, y, cropWidth, cropHeight);
-
-            return result;
-        } catch (Exception e) {
-            logger.warn("裁剪右上角区域失败: {}", e.getMessage());
-            return null;
         }
     }
 

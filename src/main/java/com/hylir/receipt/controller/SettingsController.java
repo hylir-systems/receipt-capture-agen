@@ -29,8 +29,6 @@ public class SettingsController implements Initializable {
     @FXML
     private TextField backendUrlField;
     @FXML
-    private TextField uploadEndpointField;
-    @FXML
     private TextField a4SaveFolderField;
     @FXML
     private Button browseFolderButton;
@@ -65,7 +63,6 @@ public class SettingsController implements Initializable {
      */
     private void loadCurrentConfig() {
         backendUrlField.setText(configManager.getBackendUrl());
-        uploadEndpointField.setText(configManager.getUploadEndpoint());
         a4SaveFolderField.setText(configManager.getA4SaveFolder());
     }
 
@@ -85,17 +82,11 @@ public class SettingsController implements Initializable {
     @FXML
     private void handleSave(ActionEvent event) {
         String backendUrl = backendUrlField.getText().trim();
-        String uploadEndpoint = uploadEndpointField.getText().trim();
         String a4SaveFolder = a4SaveFolderField.getText().trim();
 
         // 验证输入
         if (backendUrl.isEmpty()) {
             showStatus("错误: 后端服务地址不能为空", true);
-            return;
-        }
-
-        if (uploadEndpoint.isEmpty()) {
-            showStatus("错误: 上传接口路径不能为空", true);
             return;
         }
 
@@ -106,7 +97,6 @@ public class SettingsController implements Initializable {
 
         // 保存配置
         configManager.setBackendUrl(backendUrl);
-        configManager.setUploadEndpoint(uploadEndpoint);
         configManager.setA4SaveFolder(a4SaveFolder);
         configManager.saveConfig();
 

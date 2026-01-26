@@ -25,14 +25,6 @@
                         <TextField fx:id="backendUrlField" promptText="例如: http://117.143.214.90:3680/api"/>
                     </children>
                 </VBox>
-
-                <!-- 上传接口路径 -->
-                <VBox spacing="5.0">
-                    <children>
-                        <Label text="上传接口路径:" styleClass="field-label"/>
-                        <TextField fx:id="uploadEndpointField" promptText="例如: /receipt/upload"/>
-                    </children>
-                </VBox>
             </children>
         </VBox>
 

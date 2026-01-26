@@ -36,6 +36,18 @@
     -fx-font-size: 11px;
 }
 
+.info-value {
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.control-label {
+    -fx-text-fill: #34495e;
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+}
+
 /* 图片显示区域 */
 .image-container {
     -fx-background-color: linear-gradient(to bottom right, #f8f9fa, #eef3f6);
@@ -243,4 +255,169 @@
 /* 禁用状态 */
 .disabled {
     -fx-opacity: 0.6;
+}
+
+/* 上传成功提示样式 */
+.success-box {
+    -fx-background-color: #d4edda;
+    -fx-border-color: #28a745;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-effect: dropshadow(gaussian, rgba(40, 167, 69, 0.2), 4, 0, 0, 1);
+}
+
+.success-icon {
+    -fx-font-size: 24px;
+    -fx-text-fill: #28a745;
+    -fx-font-weight: bold;
+}
+
+.success-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #155724;
+}
+
+.success-barcode-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #155724;
+    -fx-font-weight: normal;
+}
+
+.success-thumbnail {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 4, 0, 0, 2);
+    -fx-border-color: #28a745;
+    -fx-border-width: 2px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+/* 成功列表容器样式 */
+.success-list {
+    -fx-background-color: transparent;
+}
+
+.success-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: #e6eef3;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.success-scroll .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ============================================
+   扫描历史列表样式
+   ============================================ */
+
+/* 历史滚动面板 */
+.history-scroll {
+    -fx-background-color: white;
+    -fx-border-color: #e6eef3;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 4, 0, 0, 1);
+}
+
+.history-scroll .viewport {
+    -fx-background-color: white;
+}
+
+/* 历史列表容器（FlowPane 网格布局） */
+.history-list {
+    -fx-background-color: white;
+}
+
+/* 历史记录卡片样式（垂直布局：图在上，文字在下） */
+.history-item {
+    -fx-background-color: white;
+    -fx-border-color: #dfe6ea;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);
+}
+
+.history-item:hover {
+    -fx-border-color: #28a745;
+    -fx-effect: dropshadow(gaussian, rgba(40, 167, 69, 0.2), 6, 0, 0, 2);
+}
+
+/* 历史记录时间戳 */
+.history-time {
+    -fx-font-size: 10px;
+    -fx-text-fill: #95a5a6;
+    -fx-padding: 2px 0px 0px 0px;
+}
+
+/* 历史记录单号（完整显示，支持换行） */
+.history-barcode {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+    -fx-alignment: center;
+    -fx-padding: 4px 2px;
+}
+
+/* 历史记录缩略图 */
+.history-thumbnail {
+    -fx-border-color: #27ae60;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 3, 0, 0, 1);
+}
+
+/* ============================================
+   图片详情对话框样式
+   ============================================ */
+
+.detail-root {
+    -fx-background-color: #f5f5f5;
+}
+
+.detail-info-box {
+    -fx-padding: 0 0 10 0;
+}
+
+.detail-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.detail-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+}
+
+.detail-value {
+    -fx-text-fill: #2c3e50;
+}
+
+.detail-scroll {
+    -fx-background-color: white;
+    -fx-border-color: #dfe6ea;
+    -fx-border-width: 1px;
+}
+
+/* SplitPane 样式 */
+.split-pane {
+    -fx-background-color: transparent;
+}
+
+.split-pane-divider {
+    -fx-background-color: #e6eef3;
+    -fx-padding: 0 2px 0 2px;
+}
+
+.split-pane-divider:hover {
+    -fx-background-color: #bdc3c7;
 }

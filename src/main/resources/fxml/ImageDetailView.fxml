@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.hylir.receipt.controller.ImageDetailController" spacing="15.0"
+      style="-fx-background-color: #f5f5f5;">
+    <padding>
+        <Insets top="20.0" right="20.0" bottom="20.0" left="20.0"/>
+    </padding>
+    
+    <children>
+        <!-- 信息区域 -->
+        <VBox spacing="8.0" styleClass="detail-info-box">
+            <children>
+                <Label fx:id="titleLabel" styleClass="detail-title" text="回单信息"/>
+                
+                <HBox spacing="8.0">
+                    <children>
+                        <Label styleClass="detail-label" text="单号："/>
+                        <Label fx:id="barcodeValueLabel" styleClass="detail-value" text=""/>
+                    </children>
+                </HBox>
+                
+                <HBox spacing="8.0">
+                    <children>
+                        <Label styleClass="detail-label" text="时间："/>
+                        <Label fx:id="timeValueLabel" styleClass="detail-value" text=""/>
+                    </children>
+                </HBox>
+                
+                <HBox spacing="8.0" alignment="CENTER_LEFT">
+                    <children>
+                        <Label styleClass="detail-label" text="URL："/>
+                        <TextField fx:id="urlValueField" editable="false" maxWidth="600.0" 
+                                   style="-fx-background-color: transparent; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0; -fx-text-fill: #333;" HBox.hgrow="ALWAYS"/>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+        
+        <!-- 图片显示区域 -->
+        <ScrollPane fx:id="imageScrollPane" fitToWidth="true" fitToHeight="true" 
+                    styleClass="detail-scroll" VBox.vgrow="ALWAYS">
+            <content>
+                <ImageView fx:id="detailImageView" preserveRatio="false" smooth="true" managed="true"/>
+            </content>
+        </ScrollPane>
+        
+        <!-- 按钮区域 -->
+        <HBox alignment="CENTER_RIGHT" spacing="10.0">
+            <children>
+                <Button fx:id="closeButton" mnemonicParsing="false" 
+                        styleClass="secondary-button" text="关闭" prefWidth="80.0"/>
+            </children>
+        </HBox>
+    </children>
+</VBox>
+

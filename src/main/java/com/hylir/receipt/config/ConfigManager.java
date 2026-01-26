@@ -22,7 +22,7 @@ public class ConfigManager {
     // 默认值
     public static final String DEFAULT_BACKEND_URL = "http://117.143.214.90:3680/api";
     public static final String DEFAULT_UPLOAD_ENDPOINT = "/receipt/upload";
-    public static final String DEFAULT_A4_SAVE_FOLDER = "./temp-images";
+    public static final String DEFAULT_A4_SAVE_FOLDER = "temp-images";
 
     private Properties properties;
     private Path configFilePath;

@@ -18,6 +18,7 @@ public class CaptureResult {
     private LocalDateTime captureTime;  // 采集时间
     private boolean uploaded;           // 是否已上传
     private String uploadResponse;      // 上传响应
+    private String uploadUrl;           // 上传后的文件URL
 
     public CaptureResult() {
         this.captureTime = LocalDateTime.now();
@@ -80,6 +81,14 @@ public class CaptureResult {
 
     public void setUploadResponse(String uploadResponse) {
         this.uploadResponse = uploadResponse;
+    }
+
+    public String getUploadUrl() {
+        return uploadUrl;
+    }
+
+    public void setUploadUrl(String uploadUrl) {
+        this.uploadUrl = uploadUrl;
     }
 
     @Override
