@@ -272,6 +272,37 @@
                 <version>3.2.5</version>
             </plugin>
 
+            <!-- jpackage 打包为 Windows EXE 安装包 -->
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.7.1</version>
+                <configuration>
+                    <!-- 安装包类型 -->
+                    <type>exe</type>
+
+                    <!-- 安装包基础配置 -->
+                    <name>Receipt Capture Agent</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>Hylir</vendor>
+                    <description>回单采集终端 - 高拍仪拍照和条码识别桌面应用</description>
+                    <copyright>Copyright © 2024 Hylir</copyright>
+
+                    <!-- 资源文件目录 -->
+                    <resourceDir>src/main/jpackage</resourceDir>
+
+                    <!-- 输入：使用 shade 生成的 JAR -->
+                    <input>target/${project.build.finalName}.jar</input>
+
+                    <!-- Java 启动参数 -->
+                    <javaOptions>
+                        <option>--add-opens java.base/java.lang=ALL-UNNAMED</option>
+                        <option>--add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                    </javaOptions>
+                    <destination/>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
