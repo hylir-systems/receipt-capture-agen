@@ -54,16 +54,56 @@ public class AppConfig {
 
     /**
      * 获取后端基础 URL
+     * 优先从 ConfigManager 读取，如果没有则从 application.properties 读取
      */
     public static String getBackendUrl() {
+        try {
+            ConfigManager configManager = ConfigManager.getInstance();
+            String url = configManager.getBackendUrl();
+            // 如果 ConfigManager 返回的不是默认值，或者配置文件中有值，则使用 ConfigManager 的值
+            if (url != null && !url.isEmpty()) {
+                return url;
+            }
+        } catch (Exception e) {
+            logger.debug("从 ConfigManager 读取配置失败，使用默认配置", e);
+        }
         return properties.getProperty("backend.url", DEFAULT_BACKEND_URL);
     }
 
     /**
      * 获取上传端点
+     * 优先从 ConfigManager 读取，如果没有则从 application.properties 读取
      */
     public static String getUploadEndpoint() {
+        try {
+            ConfigManager configManager = ConfigManager.getInstance();
+            String endpoint = configManager.getUploadEndpoint();
+            // 如果 ConfigManager 返回的不是默认值，或者配置文件中有值，则使用 ConfigManager 的值
+            if (endpoint != null && !endpoint.isEmpty()) {
+                return endpoint;
+            }
+        } catch (Exception e) {
+            logger.debug("从 ConfigManager 读取配置失败，使用默认配置", e);
+        }
         return properties.getProperty("backend.upload.endpoint", DEFAULT_UPLOAD_ENDPOINT);
+    }
+
+    /**
+     * 获取 A4 保存文件夹路径
+     * 优先从 ConfigManager 读取，如果没有则使用默认临时目录
+     */
+    public static String getA4SaveFolder() {
+        try {
+            ConfigManager configManager = ConfigManager.getInstance();
+            String folder = configManager.getA4SaveFolder();
+            if (folder != null && !folder.isEmpty()) {
+                return folder;
+            }
+        } catch (Exception e) {
+            logger.debug("从 ConfigManager 读取 A4 保存文件夹失败，使用默认配置", e);
+        }
+        // 默认使用临时目录
+        return System.getProperty("java.io.tmpdir") + "/receipt-capture";
     }
 
     /**
@@ -129,7 +169,7 @@ public class AppConfig {
     }
 
     /**
-     * 获取摄像头采集宽度（像素），默认 1280
+     * 获取摄像头采集宽度（像素），默认 1600
      */
     public static int getCameraWidth() {
         String w = properties.getProperty("camera.width");
@@ -141,7 +181,7 @@ public class AppConfig {
     }
 
     /**
-     * 获取摄像头采集高度（像素），默认 720
+     * 获取摄像头采集高度（像素），默认 1200
      */
     public static int getCameraHeight() {
         String h = properties.getProperty("camera.height");

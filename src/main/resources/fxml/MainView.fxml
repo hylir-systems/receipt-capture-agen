@@ -5,7 +5,8 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hylir.receipt.controller.MainController">
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.hylir.receipt.controller.MainController">
     <children>
         <!-- 标题栏 -->
         <HBox styleClass="title-bar">
@@ -13,6 +14,7 @@
                 <Label styleClass="title-label" text="回单采集终端 - Receipt Capture Agent"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label styleClass="version-label" text="v1.0.0"/>
+                <Button fx:id="settingsButton" mnemonicParsing="false" styleClass="icon-button" text="⚙️ 设置"/>
             </children>
             <VBox.margin>
                 <Insets bottom="10.0"/>
@@ -43,14 +45,16 @@
                                             </tooltip>
                                         </ComboBox>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <Button fx:id="previewButton" mnemonicParsing="false" styleClass="secondary-button" text="预览"/>
+                                        <Button fx:id="previewButton" mnemonicParsing="false"
+                                                styleClass="secondary-button" text="预览"/>
                                     </children>
                                 </HBox>
 
                                 <!-- 操作按钮（突显主操作，增加间距） -->
                                 <HBox spacing="12.0" alignment="CENTER">
                                     <children>
-                                        <Button fx:id="autoDetectButton" mnemonicParsing="false" styleClass="success-button" text="自动检测 (F6)" prefWidth="140.0"/>
+                                        <Button fx:id="autoDetectButton" mnemonicParsing="false"
+                                                styleClass="success-button" text="自动检测 (F6)" prefWidth="140.0"/>
                                         <ProgressBar fx:id="progressBar" prefWidth="220.0" progress="0.0"/>
                                     </children>
                                 </HBox>
@@ -73,11 +77,16 @@
                                         <VBox spacing="8.0" styleClass="card">
                                             <children>
                                                 <Label styleClass="card-title" text="送货单号"/>
-                                                <TextField fx:id="receiptNumberField" promptText="自动识别或手动输入" styleClass="text-field"/>
+                                                <TextField fx:id="receiptNumberField" promptText="自动识别或手动输入"
+                                                           styleClass="text-field"/>
                                                 <HBox spacing="10.0">
                                                     <children>
-                                                        <Button fx:id="uploadButton" disable="true" mnemonicParsing="false" styleClass="success-button" text="上传"/>
-                                                        <Button fx:id="manualInputButton" disable="true" mnemonicParsing="false" styleClass="secondary-button" text="手动输入"/>
+                                                        <Button fx:id="uploadButton" disable="true"
+                                                                mnemonicParsing="false" styleClass="success-button"
+                                                                text="上传"/>
+                                                        <Button fx:id="manualInputButton" disable="true"
+                                                                mnemonicParsing="false" styleClass="secondary-button"
+                                                                text="手动输入"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -87,7 +96,8 @@
                                         <VBox spacing="8.0" styleClass="card" VBox.vgrow="ALWAYS">
                                             <children>
                                                 <Label styleClass="card-title" text="操作日志"/>
-                                                <TextArea fx:id="statusArea" editable="false" wrapText="true" prefRowCount="20" styleClass="text-area" VBox.vgrow="ALWAYS"/>
+                                                <TextArea fx:id="statusArea" editable="false" wrapText="true"
+                                                          prefRowCount="20" styleClass="text-area" VBox.vgrow="ALWAYS"/>
                                             </children>
                                         </VBox>
 
@@ -97,7 +107,8 @@
                                                 <HBox spacing="10.0" alignment="CENTER_LEFT">
                                                     <children>
                                                         <Label styleClass="info-label" text="当前设备："/>
-                                                        <Label fx:id="currentDeviceLabel" styleClass="info-label" text="GK122"/>
+                                                        <Label fx:id="currentDeviceLabel" styleClass="info-label"
+                                                               text="GK122"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox spacing="10.0" alignment="CENTER_LEFT">

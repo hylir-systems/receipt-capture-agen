@@ -2,11 +2,13 @@ package com.hylir.receipt.service.camera;
 
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
+import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.opencv.opencv_core.Mat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hylir.receipt.config.AppConfig;
-import com.hylir.receipt.service.DocumentScanner;
+import com.hylir.receipt.service.A4PaperDetectorHighCamera;
 import com.hylir.receipt.util.TempFileCleaner;
 
 import javax.imageio.ImageIO;
@@ -29,6 +31,10 @@ public class CameraStreamService {
     private ScheduledExecutorService streamExecutor = null;
     private volatile boolean streamRunning = false;
     private volatile boolean firstFrameSaved = false;
+
+    // JavaCV 转换器（用于 A4 检测）
+    private static final Java2DFrameConverter JAVA2D_CONVERTER = new Java2DFrameConverter();
+    private static final OpenCVFrameConverter.ToMat MAT_CONVERTER = new OpenCVFrameConverter.ToMat();
 
     // 实时流回调接口
     public interface StreamCallback {
@@ -144,8 +150,9 @@ public class CameraStreamService {
      */
     private void saveFirstFrame(BufferedImage bufferedImage) {
         try {
-            // 确保临时目录存在
-            Path tempPath = Paths.get(CameraConstants.TEMP_DIR);
+            // 使用配置的 A4 保存文件夹
+            String saveFolder = com.hylir.receipt.config.AppConfig.getA4SaveFolder();
+            Path tempPath = Paths.get(saveFolder);
             if (!Files.exists(tempPath)) {
                 Files.createDirectories(tempPath);
             }
@@ -159,18 +166,29 @@ public class CameraStreamService {
             // 尝试 A4 矫正
             if (AppConfig.isAutoA4CorrectionEnabled()) {
                 try {
-                    BufferedImage correctedImg = DocumentScanner.detectAndWarp(bufferedImage, AppConfig.getCameraWidth(), AppConfig.getCameraHeight());
-                    if (correctedImg != null) {
-                        toSave = correctedImg;
-                        corrected = true;
+                    // 转换 BufferedImage 为 Mat
+                    Frame frame = JAVA2D_CONVERTER.convert(bufferedImage);
+                    Mat srcMat = MAT_CONVERTER.convert(frame);
+
+                    // 使用 A4PaperDetectorHighCamera 进行 A4 检测与透视变换
+                    Mat correctedMat = A4PaperDetectorHighCamera.detectAndWarpA4(srcMat);
+
+                    if (correctedMat != null && !correctedMat.empty()) {
+                        // 转换回 BufferedImage
+                        Frame outFrame = MAT_CONVERTER.convert(correctedMat);
+                        BufferedImage correctedImg = JAVA2D_CONVERTER.getBufferedImage(outFrame, 1);
+                        if (correctedImg != null) {
+                            toSave = correctedImg;
+                            corrected = true;
+                        }
                     }
                 } catch (Exception ex) {
                     logger.warn("A4 矫正失败: {}", ex.getMessage());
                 }
             }
 
-            // 保存首帧
-            String firstPath = CameraConstants.TEMP_DIR + File.separator + (corrected ? "first_frame_corrected_" : "first_frame_") + System.currentTimeMillis() + ".png";
+            // 保存首帧（A4 矫正后的图片保存到配置的文件夹）
+            String firstPath = saveFolder + File.separator + (corrected ? "a4_corrected_" : "first_frame_") + System.currentTimeMillis() + ".png";
             ImageIO.write(toSave, "PNG", new File(firstPath));
             logger.info("首帧已保存: {} (corrected={})", firstPath, corrected);
         } catch (IOException ioe) {

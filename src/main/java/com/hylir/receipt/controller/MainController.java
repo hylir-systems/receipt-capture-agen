@@ -5,40 +5,30 @@ import com.hylir.receipt.model.CaptureResult;
 import com.hylir.receipt.service.BarcodeRecognitionService;
 import com.hylir.receipt.service.CameraService;
 import com.hylir.receipt.service.UploadService;
-import com.hylir.receipt.util.TempFileCleaner;
+import com.hylir.receipt.service.autocapture.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.collections.FXCollections;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelBuffer;
 
 import java.nio.IntBuffer;
 
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import javax.imageio.ImageIO;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -64,8 +54,6 @@ public class MainController implements Initializable {
     @FXML
     private TextArea statusArea;
     @FXML
-    private Button autoDetectButton;
-    @FXML
     private Button uploadButton;
     @FXML
     private Button manualInputButton;
@@ -79,17 +67,16 @@ public class MainController implements Initializable {
     private Label statusLabel;
     @FXML
     private ProgressBar progressBar;
-
-    // 扫描区域选择相关（已移除，实时取景不再支持手动选区）
-
-    // 拍照区域尺寸常量 (在640x480预览图像中的比例，适合摄像头取景)
-    private static final double PHOTO_WIDTH_RATIO = 0.8;  // 拍照宽度占预览区域的80%
-    private static final double PHOTO_HEIGHT_RATIO = 0.7; // 拍照高度占预览区域的70%
+    @FXML
+    private Button settingsButton;
 
     // 服务组件
     private CameraService cameraService;
     private BarcodeRecognitionService barcodeService;
     private UploadService uploadService;
+    
+    // 自动采集服务
+    private AutoCaptureService autoCaptureService;
 
     // 当前采集结果
     private CaptureResult currentResult;
@@ -98,14 +85,6 @@ public class MainController implements Initializable {
     private PixelBuffer<IntBuffer> pixelBuffer = null;
     private IntBuffer intBuffer = null;
     private long lastLatencyLogTime = 0L;
-    // 自动预览检测相关
-    private volatile boolean autoDetectInProgress = false;
-    private long lastAutoDetectTime = 0L;
-    private static final long AUTO_DETECT_INTERVAL_MS = 2000L; // 每2秒最多触发一次
-    private static final String PREVIEW_TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"), "receipt-capture").toString();
-    private static final int MAX_PREVIEW_IMAGES = 10; // 最多保存10张预览图片
-    private static final long TEMP_FILE_EXPIRE_MS = 2 * 60 * 1000L; // 临时文件过期时间：2分钟
-    private int previewImageCount = 0; // 预览图片计数器
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -120,8 +99,6 @@ public class MainController implements Initializable {
             // 测试连接
             testConnections();
 
-            // 启动时清理过期临时文件
-            TempFileCleaner.cleanupExpiredFiles(PREVIEW_TEMP_DIR);
 
             logger.info("主控制器初始化完成");
 
@@ -141,6 +118,52 @@ public class MainController implements Initializable {
 
         // 初始化摄像头
         cameraService.initialize();
+        
+        // 初始化自动采集服务
+        initializeAutoCaptureService();
+    }
+    
+    /**
+     * 初始化自动采集服务
+     */
+    private void initializeAutoCaptureService() {
+        // 创建帧变化检测器（只负责判断是否出现新 A4 纸）
+        FrameChangeDetector changeDetector = new FrameChangeDetector();
+        
+        // 获取输出目录
+        String outputDirPath = AppConfig.getA4SaveFolder();
+        java.io.File outputDir = new java.io.File(outputDirPath);
+        
+        // 创建处理管道（内部包含：A4矫正 → 条码识别 → 去重 → 文件保存）
+        CapturePipeline capturePipeline = new CapturePipeline(barcodeService, outputDir);
+        
+        // 组装自动采集服务
+        autoCaptureService = new AutoCaptureService(changeDetector, capturePipeline);
+        
+        // 设置结果回调（通过 Platform.runLater 通知 UI）
+        autoCaptureService.setCallback(result -> {
+            Platform.runLater(() -> {
+                handleAutoCaptureResult(result);
+            });
+        });
+        
+        // 默认启用自动采集
+        autoCaptureService.enable();
+        appendStatus("自动采集服务已初始化并启用");
+    }
+    
+    /**
+     * 处理自动采集结果
+     */
+    private void handleAutoCaptureResult(CapturePipeline.CaptureResult result) {
+        if (result.isSuccess()) {
+            appendStatus("✓ 自动采集成功: 条码=" + result.getBarcode() + 
+                        ", 文件=" + result.getFilePath());
+        } else if (result.isDuplicate()) {
+            appendStatus("⚠ 条码重复，已跳过: " + result.getBarcode());
+        } else {
+            appendStatus("✗ 自动采集失败: " + result.getErrorMessage());
+        }
     }
 
     /**
@@ -165,10 +188,10 @@ public class MainController implements Initializable {
         }
 
         // 设置快捷键
-        autoDetectButton.setOnAction(e -> handleAutoDetect());
         uploadButton.setOnAction(e -> handleUpload());
         manualInputButton.setOnAction(e -> handleManualInput());
         previewButton.setOnAction(e -> handlePreview());
+        settingsButton.setOnAction(e -> handleSettings());
 
         // 添加键盘快捷键支持
         setupKeyboardShortcuts();
@@ -180,40 +203,7 @@ public class MainController implements Initializable {
      * 设置键盘快捷键
      */
     private void setupKeyboardShortcuts() {
-        // 在 UI 完成渲染后再注册键盘事件，避免 getScene() 返回 null 导致 NPE
-        Platform.runLater(() -> {
-            if (imagePane.getScene() != null) {
-                imagePane.getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                    if (event.getCode() == KeyCode.F6) {
-                        if (!autoDetectButton.isDisabled()) {
-                            handleAutoDetect();
-                            event.consume();
-                        }
-                    }
-                });
-            } else {
-                // 如果仍为空，则监听 sceneProperty，当 scene 可用时注册并移除监听
-                final javafx.beans.value.ChangeListener<javafx.scene.Scene> listener =
-                        new javafx.beans.value.ChangeListener<javafx.scene.Scene>() {
-                            @Override
-                            public void changed(javafx.beans.value.ObservableValue<? extends javafx.scene.Scene> obs,
-                                                javafx.scene.Scene oldScene, javafx.scene.Scene newScene) {
-                                if (newScene != null) {
-                                    newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                                        if (event.getCode() == KeyCode.F6) {
-                                            if (!autoDetectButton.isDisabled()) {
-                                                handleAutoDetect();
-                                                event.consume();
-                                            }
-                                        }
-                                    });
-                                    imagePane.sceneProperty().removeListener(this);
-                                }
-                            }
-                        };
-                imagePane.sceneProperty().addListener(listener);
-            }
-        });
+        // 键盘快捷键功能已移除
     }
 
     /**
@@ -315,6 +305,11 @@ public class MainController implements Initializable {
             public void onFrame(int[] pixels, int w, int h, long captureTimeNanos) {
                 // 非 UI 线程回调，尽量少做工作，提交到 UI 线程只做 PixelBuffer 更新
                 if (pixels == null || w <= 0 || h <= 0) return;
+                
+                // 自动采集服务处理帧（在后台线程，不阻塞UI）
+                if (autoCaptureService != null && autoCaptureService.isEnabled()) {
+                    autoCaptureService.onFrame(pixels, w, h);
+                }
 
                 Platform.runLater(() -> {
                     try {
@@ -334,86 +329,8 @@ public class MainController implements Initializable {
                         // 通知 PixelBuffer 已更新（零拷贝）
                         pixelBuffer.updateBuffer(buf -> null);
 
-                        // 自动在预览中检测 A4 并识别条码（有节流，后台执行避免阻塞 UI）
-                        long nowMs = System.currentTimeMillis();
-                        if (AppConfig.isAutoA4CorrectionEnabled() && !autoDetectInProgress
-                                && (nowMs - lastAutoDetectTime) >= AUTO_DETECT_INTERVAL_MS) {
-                            lastAutoDetectTime = nowMs;
-                            autoDetectInProgress = true;
-                            // 复制像素数据，避免并发问题
-                            int[] frameCopy = Arrays.copyOf(pixels, w * h);
-                            final int fw = w;
-                            final int fh = h;
-
-                            Task<Void> detectTask = new Task<Void>() {
-                                @Override
-                                protected Void call() {
-                                    try {
-                                        BufferedImage frameImg = new BufferedImage(fw, fh, BufferedImage.TYPE_INT_ARGB);
-                                        frameImg.setRGB(0, 0, fw, fh, frameCopy, 0, fw);
-
-                                        // 保存原始帧图片到临时文件
-                                        Path tmpDir = Paths.get(PREVIEW_TEMP_DIR);
-                                        if (!Files.exists(tmpDir)) Files.createDirectories(tmpDir);
-                                        
-                                        // 清理过期文件（只保留最近2分钟）
-                                        TempFileCleaner.cleanupExpiredFiles(tmpDir);
-                                        
-                                        String timestamp = String.valueOf(System.currentTimeMillis());
-                                        String rawPath = PREVIEW_TEMP_DIR + File.separator + "preview_raw_" + timestamp + ".png";
-                                        ImageIO.write(frameImg, "PNG", new File(rawPath));
-                                        logger.info("预览原始图片保存到: {}", rawPath);
-
-                                        // 优先尝试基于 A4 的矫正
-                                        BufferedImage corrected = com.hylir.receipt.service.DocumentScanner.detectAndWarpA4(
-                                                frameImg, AppConfig.getCameraWidth(), AppConfig.getCameraHeight());
-                                        BufferedImage toRecognize = corrected != null ? corrected : frameImg;
-
-                                        // 如果A4矫正成功，保存矫正后的图片
-                                        if (corrected != null) {
-                                            String correctedPath = PREVIEW_TEMP_DIR + File.separator + "preview_corrected_" + timestamp + ".png";
-                                            ImageIO.write(corrected, "PNG", new File(correctedPath));
-                                            logger.info("预览A4矫正图片保存到: {}", correctedPath);
-                                        }
-
-                                        // 更新计数器并检查是否超过最大数量
-                                        previewImageCount++;
-                                        if (previewImageCount >= MAX_PREVIEW_IMAGES) {
-                                            previewImageCount = 0; // 循环使用，从1重新开始
-                                        }
-
-                                        // 识别条码（在后台执行）
-                                        String code = barcodeService.recognize(toRecognize, 3);
-                                        if (code != null && barcodeService.isValidReceiptNumber(code)) {
-                                            Platform.runLater(() -> {
-                                                receiptNumberField.setText(code);
-                                                appendStatus("✓ 预览自动识别到条码: " + code);
-                                                uploadButton.setDisable(false);
-                                            });
-                                        } else {
-                                            logger.debug("预览未识别到有效条码");
-                                        }
-                                    } catch (Exception e) {
-                                        logger.warn("预览自动检测或识别失败: {}", e.getMessage());
-                                    } finally {
-                                        autoDetectInProgress = false;
-                                    }
-                                    return null;
-                                }
-                            };
-
-                            new Thread(detectTask, "Preview-AutoDetect").start();
-                        }
-
                         // 记录并显示延迟（按1s频率显示以免过多日志）
                         long now = System.nanoTime();
-                        long latencyMs = (now - captureTimeNanos) / 1_000_000;
-                        if (lastLatencyLogTime == 0 || now - lastLatencyLogTime >= 1_000_000_000L) {
-                            lastLatencyLogTime = now;
-                           // logger.info("帧端到端延迟: {} ms", latencyMs);
-                           // appendStatus("当前延迟: " + latencyMs + " ms");
-                        }
-
                         // 计算缩放以完整显示视频（等比缩放，确保完整显示）
                         double paneW = imagePane.getWidth() - 20;
                         double paneH = imagePane.getHeight() - 20;
@@ -483,7 +400,11 @@ public class MainController implements Initializable {
      */
     private void stopLivePreview() {
         cameraService.stopLiveStream();
-
+        
+        // 禁用自动采集
+        if (autoCaptureService != null) {
+            autoCaptureService.disable();
+        }
 
         appendStatus("✓ 实时预览已停止");
         // 清空 UI 上的预览并释放本地缓存，确保下次重新创建
@@ -557,144 +478,6 @@ public class MainController implements Initializable {
         new Thread(testTask).start();
     }
 
-    /**
-     * 处理自动检测按钮点击
-     */
-    @FXML
-    private void handleAutoDetect() {
-        autoDetectButton.setDisable(true);
-        progressBar.setVisible(true);
-        appendStatus("正在自动检测A4纸张...");
-
-        Task<CaptureResult> autoDetectTask = new Task<CaptureResult>() {
-            @Override
-            protected CaptureResult call() throws Exception {
-                try {
-                    // 拍照
-                    updateMessage("正在拍照...");
-                    String imagePath = cameraService.captureImage();
-
-                    // 读取图片
-                    updateMessage("正在处理图片...");
-                    BufferedImage bufferedImage = cameraService.captureImageAsBufferedImage();
-
-                    // 自动检测并矫正A4纸张
-                    updateMessage("正在检测A4纸张...");
-                    BufferedImage correctedImage = com.hylir.receipt.service.DocumentScanner.detectAndWarpA4(
-                            bufferedImage,
-                            AppConfig.getCameraWidth(),
-                            AppConfig.getCameraHeight()
-                    );
-
-                    if (correctedImage != null) {
-                        updateMessage("A4纸张检测成功，正在矫正...");
-                        // 使用矫正后的图像进行条码识别
-                        bufferedImage = correctedImage;
-                        logger.info("A4纸张自动检测和矫正成功");
-                    } else {
-                        updateMessage("未检测到A4纸张，使用原图处理...");
-                        logger.warn("未检测到A4纸张，使用原图进行处理");
-                    }
-
-                    // 识别条码
-                    updateMessage("正在识别条码...");
-                    String barcode = barcodeService.recognize(bufferedImage, 3);
-
-                    // 创建结果对象
-                    CaptureResult result = new CaptureResult();
-                    result.setImagePath(imagePath);
-
-                    if (barcode != null && barcodeService.isValidReceiptNumber(barcode)) {
-                        result.setReceiptNumber(barcode);
-                        result.setRecognitionSuccess(true);
-                        logger.info("条码识别成功: {}", barcode);
-                    } else {
-                        result.setRecognitionSuccess(false);
-                        result.setErrorMessage("未能识别到有效的送货单号");
-                        logger.warn("条码识别失败");
-                    }
-
-                    return result;
-
-                } catch (Exception e) {
-                    logger.error("自动检测过程出错", e);
-                    throw e;
-                }
-            }
-
-            @Override
-            protected void succeeded() {
-                currentResult = getValue();
-                updateUIAfterAutoDetect();
-            }
-
-            @Override
-            protected void failed() {
-                Throwable exception = getException();
-                logger.error("自动检测失败", exception);
-                appendStatus("自动检测失败: " + exception.getMessage());
-                showErrorAlert("自动检测失败", "自动检测过程中出现错误: " + exception.getMessage());
-                resetUIAfterAutoDetect();
-            }
-        };
-
-        progressBar.progressProperty().bind(autoDetectTask.progressProperty());
-        new Thread(autoDetectTask).start();
-    }
-
-    /**
-     * 自动检测成功后更新UI
-     */
-    private void updateUIAfterAutoDetect() {
-        try {
-            // 显示图片
-            if (currentResult.getImagePath() != null) {
-                File imageFile = new File(currentResult.getImagePath());
-                if (imageFile.exists() && imageFile.length() > 0) {
-                    logger.info("加载自动检测图片: {} (大小: {} bytes)", currentResult.getImagePath(), imageFile.length());
-                    // 使用FileInputStream来确保图片加载
-                    try (FileInputStream fis = new FileInputStream(imageFile)) {
-                        Image image = new Image(fis);
-                        imageView.setImage(image);
-                        imageView.setVisible(true);
-                        appendStatus("✓ A4自动检测完成，图片已加载，大小: " + imageFile.length() + " bytes");
-                    }
-                } else {
-                    logger.warn("图片文件不存在或为空: {}", currentResult.getImagePath());
-                    appendStatus("✗ 图片文件不存在或为空");
-                }
-            } else {
-                logger.warn("自动检测结果中没有图片路径");
-                appendStatus("✗ 未获取到图片路径");
-            }
-
-            // 显示识别结果
-            if (currentResult.isRecognitionSuccess()) {
-                receiptNumberField.setText(currentResult.getReceiptNumber());
-                appendStatus("✓ 识别成功: " + currentResult.getReceiptNumber());
-                uploadButton.setDisable(false);
-            } else {
-                receiptNumberField.setText("");
-                appendStatus("✗ 识别失败: " + currentResult.getErrorMessage());
-                showInfoAlert("识别失败", "未能自动识别送货单号，请手动输入或重新拍照");
-                manualInputButton.setDisable(false);
-            }
-
-        } catch (Exception e) {
-            logger.error("更新UI失败", e);
-        } finally {
-            resetUIAfterAutoDetect();
-        }
-    }
-
-    /**
-     * 重置自动检测后的UI状态
-     */
-    private void resetUIAfterAutoDetect() {
-        autoDetectButton.setDisable(false);
-        progressBar.setVisible(false);
-        progressBar.progressProperty().unbind();
-    }
 
     /**
      * 处理上传按钮点击
@@ -833,5 +616,18 @@ public class MainController implements Initializable {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    /**
+     * 处理设置按钮点击
+     */
+    @FXML
+    private void handleSettings() {
+        Stage primaryStage = (Stage) settingsButton.getScene().getWindow();
+        SettingsController.showSettingsDialog(primaryStage);
+        
+        // 设置保存后，重新初始化上传服务以使用新配置
+        uploadService = new UploadService();
+        appendStatus("配置已更新，上传服务已重新初始化");
     }
 }
