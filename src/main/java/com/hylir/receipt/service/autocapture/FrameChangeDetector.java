@@ -13,15 +13,28 @@ public class FrameChangeDetector {
     private int[] lastFrame;
     private int width;
     private int height;
+    private boolean initialized = false;
 
     public boolean isFrameChanging(int[] pixels, int w, int h) {
         if (pixels == null) return false;
 
+        // 首次初始化：保存基准帧，但不返回"变化"（因为画面可能是稳定的）
         if (lastFrame == null || w != width || h != height) {
             lastFrame = pixels.clone();
             width = w;
             height = h;
-            return true;
+            initialized = true;
+            // 首次初始化时，如果画面已经稳定，不应该返回"变化"
+            return false;
+        }
+
+        // 如果还未初始化（不应该发生，但为了安全），初始化但不返回"变化"
+        if (!initialized) {
+            lastFrame = pixels.clone();
+            width = w;
+            height = h;
+            initialized = true;
+            return false;
         }
 
         int diffCount = 0;
@@ -60,5 +73,25 @@ public class FrameChangeDetector {
 
     public void reset() {
         lastFrame = null;
+        width = 0;
+        height = 0;
+        initialized = false;
+    }
+    
+    /**
+     * 初始化基准帧（用于首次启动或重新开始预览时）
+     * 保存当前帧作为基准，但不返回"变化"
+     * 
+     * @param pixels 当前帧像素数组
+     * @param w 宽度
+     * @param h 高度
+     */
+    public void initialize(int[] pixels, int w, int h) {
+        if (pixels != null) {
+            lastFrame = pixels.clone();
+            width = w;
+            height = h;
+            initialized = true;
+        }
     }
 }

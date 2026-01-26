@@ -6,6 +6,7 @@ import org.bytedeco.javacv.Java2DFrameConverter;
 import org.bytedeco.javacv.OpenCVFrameConverter;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.opencv.opencv_core.Mat;
+import org.bytedeco.javacpp.indexer.UByteIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,14 +46,14 @@ public class CapturePipeline {
                 return CaptureResult.failure("无法转换像素数组为图像");
             }
 
-            // 2. A4矫正
-            BufferedImage correctedImage = performA4Correction(originalImage);
+            // 2. A4矫正（直接使用 pixels，避免不必要的转换）
+            BufferedImage correctedImage = performA4Correction(pixels, width, height);
             if (correctedImage == null) {
                 correctedImage = originalImage; // 如果矫正失败，使用原图
             }
 
             // 3. 条码识别
-            String barcode = barcodeService.recognize(correctedImage, 3);
+            String barcode = barcodeService.recognize(originalImage, 3);
             if (barcode == null || barcode.trim().isEmpty()) {
                 return CaptureResult.failure("条码识别失败");
             }
@@ -90,12 +91,16 @@ public class CapturePipeline {
 
     /**
      * 执行 A4 矫正
+     * 直接从 pixels 转换为 Mat，避免先转换为 BufferedImage
      */
-    private BufferedImage performA4Correction(BufferedImage original) {
+    private BufferedImage performA4Correction(int[] pixels, int width, int height) {
+        Mat srcMat = null;
         try {
-            // 转换为 Mat
-            Frame frame = JAVA2D_CONVERTER.convert(original);
-            Mat srcMat = MAT_CONVERTER.convert(frame);
+            // 直接将 pixels 转换为 Mat (BGR 格式)
+            srcMat = pixelsToMat(pixels, width, height);
+            if (srcMat == null || srcMat.empty()) {
+                return null;
+            }
 
             // A4 检测与矫正
             Mat correctedMat = A4PaperDetectorHighCamera.detectAndWarpA4(srcMat);
@@ -106,16 +111,63 @@ public class CapturePipeline {
                 BufferedImage corrected = JAVA2D_CONVERTER.getBufferedImage(outFrame, 1);
                 
                 // 释放 Mat 资源
-                srcMat.close();
                 correctedMat.close();
                 
                 return corrected;
             } else {
-                srcMat.close();
                 return null;
             }
         } catch (Exception e) {
             logger.warn("A4 矫正失败: {}", e.getMessage());
+            return null;
+        } finally {
+            // 确保释放 Mat 资源
+            if (srcMat != null) {
+                srcMat.close();
+            }
+        }
+    }
+    
+    /**
+     * 将 int[] pixels (ARGB格式) 直接转换为 OpenCV Mat (BGR格式)
+     */
+    private Mat pixelsToMat(int[] pixels, int width, int height) {
+        try {
+            // 创建 Mat，类型为 CV_8UC3 (BGR)
+            Mat mat = new Mat(height, width, org.bytedeco.opencv.global.opencv_core.CV_8UC3);
+            UByteIndexer indexer = mat.createIndexer();
+            
+            // 将 ARGB 格式的 pixels 转换为 BGR 格式并写入 Mat
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int idx = y * width + x;
+                    int pixel = pixels[idx];
+                    
+                    // 提取 ARGB 分量
+                    int a = (pixel >> 24) & 0xFF;
+                    int r = (pixel >> 16) & 0xFF;
+                    int g = (pixel >> 8) & 0xFF;
+                    int b = pixel & 0xFF;
+                    
+                    // 如果 alpha < 255，进行 alpha 混合（假设背景为白色）
+                    if (a < 255) {
+                        float alpha = a / 255.0f;
+                        r = (int) (r * alpha + 255 * (1 - alpha));
+                        g = (int) (g * alpha + 255 * (1 - alpha));
+                        b = (int) (b * alpha + 255 * (1 - alpha));
+                    }
+                    
+                    // OpenCV Mat 使用 BGR 格式，写入顺序为 B, G, R
+                    indexer.put(y, x, 0, b); // B
+                    indexer.put(y, x, 1, g); // G
+                    indexer.put(y, x, 2, r); // R
+                }
+            }
+            
+            indexer.close();
+            return mat;
+        } catch (Exception e) {
+            logger.error("转换 pixels 到 Mat 失败", e);
             return null;
         }
     }

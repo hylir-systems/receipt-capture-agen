@@ -2,22 +2,12 @@ package com.hylir.receipt.service.camera;
 
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
-import org.bytedeco.javacv.OpenCVFrameConverter;
-import org.bytedeco.opencv.opencv_core.Mat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hylir.receipt.config.AppConfig;
-import com.hylir.receipt.service.A4PaperDetectorHighCamera;
-import com.hylir.receipt.util.TempFileCleaner;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,11 +20,6 @@ public class CameraStreamService {
     private static final Logger logger = LoggerFactory.getLogger(CameraStreamService.class);
     private ScheduledExecutorService streamExecutor = null;
     private volatile boolean streamRunning = false;
-    private volatile boolean firstFrameSaved = false;
-
-    // JavaCV 转换器（用于 A4 检测）
-    private static final Java2DFrameConverter JAVA2D_CONVERTER = new Java2DFrameConverter();
-    private static final OpenCVFrameConverter.ToMat MAT_CONVERTER = new OpenCVFrameConverter.ToMat();
 
     // 实时流回调接口
     public interface StreamCallback {
@@ -92,9 +77,6 @@ public class CameraStreamService {
             return false;
         }
 
-        // 重置首帧保存标志
-        firstFrameSaved = false;
-
         // 准备转换器一次性复用
         final Java2DFrameConverter converter = new Java2DFrameConverter();
         streamExecutor.scheduleWithFixedDelay(() -> {
@@ -104,17 +86,6 @@ public class CameraStreamService {
                 if (frame != null) {
                     BufferedImage bufferedImage = converter.convert(frame);
                     if (bufferedImage != null && streamCallback != null) {
-                        // 记录实际捕获的尺寸
-                        int actualW = bufferedImage.getWidth();
-                        int actualH = bufferedImage.getHeight();
-                        if (logger.isDebugEnabled()) {
-                            //logger.info("捕获尺寸: {}x{}", actualW, actualH);
-                        }
-                        // 保存首帧到临时目录
-                        if (!firstFrameSaved) {
-                            saveFirstFrame(bufferedImage);
-                        }
-
                         // 转换为像素数组并回调
                         int w = bufferedImage.getWidth();
                         int h = bufferedImage.getHeight();
@@ -141,61 +112,6 @@ public class CameraStreamService {
         }, 0, Math.max(10, 1000 / AppConfig.getCameraFps()), TimeUnit.MILLISECONDS);
 
         return true;
-    }
-
-    /**
-     * 保存首帧图像
-     *
-     * @param bufferedImage 首帧图像
-     */
-    private void saveFirstFrame(BufferedImage bufferedImage) {
-        try {
-            // 使用配置的 A4 保存文件夹
-            String saveFolder = com.hylir.receipt.config.AppConfig.getA4SaveFolder();
-            Path tempPath = Paths.get(saveFolder);
-            if (!Files.exists(tempPath)) {
-                Files.createDirectories(tempPath);
-            }
-
-            // 清理过期文件（只保留最近2分钟）
-            TempFileCleaner.cleanupExpiredFiles(tempPath);
-
-            BufferedImage toSave = bufferedImage;
-            boolean corrected = false;
-
-            // 尝试 A4 矫正
-            if (AppConfig.isAutoA4CorrectionEnabled()) {
-                try {
-                    // 转换 BufferedImage 为 Mat
-                    Frame frame = JAVA2D_CONVERTER.convert(bufferedImage);
-                    Mat srcMat = MAT_CONVERTER.convert(frame);
-
-                    // 使用 A4PaperDetectorHighCamera 进行 A4 检测与透视变换
-                    Mat correctedMat = A4PaperDetectorHighCamera.detectAndWarpA4(srcMat);
-
-                    if (correctedMat != null && !correctedMat.empty()) {
-                        // 转换回 BufferedImage
-                        Frame outFrame = MAT_CONVERTER.convert(correctedMat);
-                        BufferedImage correctedImg = JAVA2D_CONVERTER.getBufferedImage(outFrame, 1);
-                        if (correctedImg != null) {
-                            toSave = correctedImg;
-                            corrected = true;
-                        }
-                    }
-                } catch (Exception ex) {
-                    logger.warn("A4 矫正失败: {}", ex.getMessage());
-                }
-            }
-
-            // 保存首帧（A4 矫正后的图片保存到配置的文件夹）
-            String firstPath = saveFolder + File.separator + (corrected ? "a4_corrected_" : "first_frame_") + System.currentTimeMillis() + ".png";
-            ImageIO.write(toSave, "PNG", new File(firstPath));
-            logger.info("首帧已保存: {} (corrected={})", firstPath, corrected);
-        } catch (IOException ioe) {
-            logger.warn("保存首帧失败: {}", ioe.getMessage());
-        } finally {
-            firstFrameSaved = true;
-        }
     }
 
     /**

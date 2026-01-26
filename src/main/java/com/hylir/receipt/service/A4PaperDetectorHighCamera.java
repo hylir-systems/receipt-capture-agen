@@ -7,11 +7,6 @@ import org.bytedeco.opencv.global.opencv_imgproc;
 import org.bytedeco.opencv.opencv_core.*;
 
 import org.bytedeco.javacpp.indexer.FloatIndexer;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-
 /**
  * 高拍仪专用 A4 检测与透视矫正（JavaCV 最终稳定版）
  *
@@ -196,12 +191,6 @@ public class A4PaperDetectorHighCamera {
 
         return warped;
     }
-
-
-    private static double distance(Point a, Point b) {
-        return Math.hypot(a.x() - b.x(), a.y() - b.y());
-    }
-
     /**
      * 简单 main 测试
      */

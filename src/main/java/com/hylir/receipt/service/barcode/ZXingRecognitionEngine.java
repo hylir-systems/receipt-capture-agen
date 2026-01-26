@@ -83,12 +83,13 @@ public class ZXingRecognitionEngine {
 
         // 方法列表（仅Code128优先，因为这是最可能成功的策略）
         List<DecodeStrategy> strategies = Arrays.asList(
-                new DecodeStrategy("仅Code128", createCode128OnlyHints()),
-                new DecodeStrategy("标准方法", createStandardHints()),
-                new DecodeStrategy("纯条码模式", createPureBarcodeHints()),
-                new DecodeStrategy("宽松模式", createLooseHints())
+                new DecodeStrategy("仅Code128", createCode128OnlyHints())
         );
 
+//        ,
+//        new DecodeStrategy("标准方法", createStandardHints()),
+//                new DecodeStrategy("纯条码模式", createPureBarcodeHints()),
+//                new DecodeStrategy("宽松模式", createLooseHints())
         // 尝试每个方法
         for (DecodeStrategy strategy : strategies) {
             try {
