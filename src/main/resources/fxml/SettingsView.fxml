@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/jxml/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.hylir.receipt.controller.SettingsController" spacing="20.0">
+    <padding>
+        <Insets top="20.0" right="30.0" bottom="20.0" left="30.0"/>
+    </padding>
+    <children>
+        <!-- 标题 -->
+        <Label styleClass="dialog-title" text="系统设置"/>
+
+        <!-- 服务器配置区域 -->
+        <VBox spacing="15.0" styleClass="settings-section">
+            <children>
+                <Label styleClass="section-header" text="服务器配置"/>
+                
+                <!-- 后端服务地址 -->
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="后端服务地址:" styleClass="field-label"/>
+                        <TextField fx:id="backendUrlField" promptText="例如: http://117.143.214.90:3680/api"/>
+                    </children>
+                </VBox>
+
+                <!-- 上传接口路径 -->
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="上传接口路径:" styleClass="field-label"/>
+                        <TextField fx:id="uploadEndpointField" promptText="例如: /receipt/upload"/>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+
+        <!-- 文件配置区域 -->
+        <VBox spacing="15.0" styleClass="settings-section">
+            <children>
+                <Label styleClass="section-header" text="文件配置"/>
+                
+                <!-- A4保存文件夹 -->
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="A4纸识别保存文件夹:" styleClass="field-label"/>
+                        <HBox spacing="10.0">
+                            <children>
+                                <TextField fx:id="a4SaveFolderField" promptText="选择或输入保存路径" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="browseFolderButton" mnemonicParsing="false" text="浏览..." styleClass="secondary-button"/>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+
+        <!-- 按钮区域 -->
+        <HBox spacing="15.0" alignment="CENTER_RIGHT">
+            <children>
+                <Button fx:id="resetButton" mnemonicParsing="false" text="恢复默认" styleClass="secondary-button"/>
+                <Button fx:id="cancelButton" mnemonicParsing="false" text="取消" styleClass="secondary-button"/>
+                <Button fx:id="saveButton" mnemonicParsing="false" text="保存" styleClass="success-button"/>
+            </children>
+        </HBox>
+
+        <!-- 状态提示 -->
+        <Label fx:id="statusLabel" styleClass="status-label" text=""/>
+    </children>
+</VBox>
+

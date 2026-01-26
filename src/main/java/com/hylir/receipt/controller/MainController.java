@@ -85,6 +85,16 @@ public class MainController implements Initializable {
     private PixelBuffer<IntBuffer> pixelBuffer = null;
     private IntBuffer intBuffer = null;
     private long lastLatencyLogTime = 0L;
+    
+    // 预览状态标志
+    private volatile boolean isPreviewActive = false;
+    
+    // 日志去重和频率限制
+    private String lastLogMessage = "";
+    private long lastLogTime = 0L;
+    private int duplicateLogCount = 0;
+    private static final long LOG_THROTTLE_MS = 2000; // 相同日志至少间隔2秒
+    private static final int MAX_DUPLICATE_COUNT = 5; // 最多连续显示5条相同日志
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -156,13 +166,64 @@ public class MainController implements Initializable {
      * 处理自动采集结果
      */
     private void handleAutoCaptureResult(CapturePipeline.CaptureResult result) {
+        // 如果预览已停止，不再处理自动采集结果
+        if (!isPreviewActive) {
+            return;
+        }
+        
+        String message;
         if (result.isSuccess()) {
-            appendStatus("✓ 自动采集成功: 条码=" + result.getBarcode() + 
-                        ", 文件=" + result.getFilePath());
+            message = "✓ 自动采集成功: 条码=" + result.getBarcode() + 
+                     ", 文件=" + result.getFilePath();
+            appendStatus(message);
+            // 成功日志重置去重计数
+            lastLogMessage = "";
+            duplicateLogCount = 0;
         } else if (result.isDuplicate()) {
-            appendStatus("⚠ 条码重复，已跳过: " + result.getBarcode());
+            message = "⚠ 条码重复，已跳过: " + result.getBarcode();
+            appendStatusThrottled(message);
         } else {
-            appendStatus("✗ 自动采集失败: " + result.getErrorMessage());
+            message = "✗ 自动采集失败: " + result.getErrorMessage();
+            appendStatusThrottled(message);
+        }
+    }
+    
+    /**
+     * 带频率限制的状态日志输出
+     * 避免相同日志频繁刷屏
+     */
+    private void appendStatusThrottled(String message) {
+        long now = System.currentTimeMillis();
+        
+        // 如果是相同的消息
+        if (message.equals(lastLogMessage)) {
+            duplicateLogCount++;
+            
+            // 如果距离上次日志时间太短，且重复次数未超过阈值，则跳过
+            if ((now - lastLogTime) < LOG_THROTTLE_MS && duplicateLogCount <= MAX_DUPLICATE_COUNT) {
+                return; // 跳过这条日志
+            }
+            
+            // 如果重复次数超过阈值，显示汇总信息
+            if (duplicateLogCount > MAX_DUPLICATE_COUNT) {
+                appendStatus(message + " (已重复 " + duplicateLogCount + " 次)");
+                duplicateLogCount = 0; // 重置计数
+                lastLogTime = now;
+                return;
+            }
+            
+            // 如果时间间隔足够，显示日志
+            if ((now - lastLogTime) >= LOG_THROTTLE_MS) {
+                appendStatus(message);
+                lastLogTime = now;
+                duplicateLogCount = 0; // 重置计数（因为已经显示了）
+            }
+        } else {
+            // 新消息，直接显示并重置计数
+            appendStatus(message);
+            lastLogMessage = message;
+            duplicateLogCount = 0;
+            lastLogTime = now;
         }
     }
 
@@ -286,6 +347,18 @@ public class MainController implements Initializable {
     private void startLivePreview() {
         previewButton.setDisable(true);
         appendStatus("正在启动实时预览...");
+        
+        // 设置预览状态标志
+        isPreviewActive = true;
+        // 重置日志去重状态
+        lastLogMessage = "";
+        duplicateLogCount = 0;
+        lastLogTime = 0L;
+        
+        // 重新启用自动采集服务
+        if (autoCaptureService != null) {
+            autoCaptureService.enable();
+        }
 
         // 清空当前图片，为新预览做准备
         imageView.setImage(null);
@@ -399,6 +472,9 @@ public class MainController implements Initializable {
      * 停止实时预览
      */
     private void stopLivePreview() {
+        // 先设置预览状态标志为 false，防止后续回调输出日志
+        isPreviewActive = false;
+        
         cameraService.stopLiveStream();
         
         // 禁用自动采集
