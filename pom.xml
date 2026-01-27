@@ -185,9 +185,12 @@
                                 </filter>
                             </filters>
                             <transformers>
+                                <!-- 保持 Manifest 中的 Main-Class -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
                                 </transformer>
+                                <!-- 合并 META-INF/services，保证 Ikonli 等基于 ServiceLoader 的库在 fat jar 中也能正常发现图标处理器 -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
