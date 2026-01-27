@@ -87,6 +87,12 @@
 
         <!-- ===== JavaCV / OpenCV / FFmpeg（仅 Windows x86_64 平台）===== -->
         <!-- 注意：每个依赖都明确指定 windows-x86_64 classifier，避免引入其他平台 -->
+        <!-- JavaCV 核心库（包含 Java2DFrameConverter、OpenCVFrameConverter 等） -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+            <version>${javacv.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
@@ -117,10 +123,7 @@
                     <groupId>org.bytedeco</groupId>
                     <artifactId>librealsense2</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>videoinput</artifactId>
-                </exclusion>
+                <!-- 注意：videoinput 在 Windows 上用于枚举摄像头设备，不能排除 -->
                 <exclusion>
                     <groupId>org.bytedeco</groupId>
                     <artifactId>artoolkitplus</artifactId>
@@ -175,6 +178,18 @@
             <groupId>org.bytedeco</groupId>
             <artifactId>openblas</artifactId>
             <version>0.3.26-1.5.10</version>
+            <classifier>windows-x86_64</classifier>
+        </dependency>
+        <!-- videoinput 用于 Windows 平台枚举摄像头设备 -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>videoinput</artifactId>
+            <version>0.200-1.5.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>videoinput</artifactId>
+            <version>0.200-1.5.9</version>
             <classifier>windows-x86_64</classifier>
         </dependency>
 
@@ -290,6 +305,9 @@
 
                     <!-- 资源文件目录 -->
                     <resourceDir>src/main/jpackage</resourceDir>
+
+                    <!-- 应用图标 -->
+                    <icon>src/main/jpackage/windows.ico</icon>
 
                     <!-- 输入：使用 shade 生成的 JAR -->
                     <input>target/${project.build.finalName}.jar</input>
