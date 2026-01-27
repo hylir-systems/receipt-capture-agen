@@ -258,6 +258,8 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <!-- 减少警告输出 -->
+                            <failsafeDependencyReducedPom>false</failsafeDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
@@ -267,11 +269,29 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <!-- 签名文件 -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <!-- 许可证文件 -->
                                         <exclude>META-INF/LICENSE*</exclude>
                                         <exclude>META-INF/NOTICE*</exclude>
+                                        <!-- 模块信息（Shade 会破坏模块封装，排除避免警告） -->
+                                        <exclude>META-INF/versions.*/module-info.class</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <!-- Maven 元数据（重复资源，只保留一个） -->
+                                        <exclude>META-INF/maven/**/pom.properties</exclude>
+                                        <exclude>META-INF/maven/**/pom.xml</exclude>
+                                        <!-- Kotlin 模块信息（重复资源，只保留一个） -->
+                                        <exclude>META-INF/okio.kotlin_module</exclude>
+                                        <!-- Native Image 配置（只保留 Windows 平台） -->
+                                        <exclude>META-INF/native-image/android*/**</exclude>
+                                        <exclude>META-INF/native-image/ios*/**</exclude>
+                                        <exclude>META-INF/native-image/linux*/**</exclude>
+                                        <exclude>META-INF/native-image/macosx*/**</exclude>
+                                        <!-- Substrate 配置（非 Windows 平台） -->
+                                        <exclude>META-INF/substrate/config/reflectionconfig-aarch64-android.json</exclude>
+                                        <exclude>META-INF/substrate/config/reflectionconfig-arm64-ios.json</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
