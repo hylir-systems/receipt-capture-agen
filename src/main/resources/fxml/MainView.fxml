@@ -11,29 +11,40 @@
         <!-- 标题栏 -->
         <HBox styleClass="title-bar" alignment="CENTER_LEFT">
             <children>
-                <Label styleClass="title-label" text="回单采集终端 - Receipt Capture Agent"/>
+                <HBox spacing="12.0" alignment="CENTER_LEFT" styleClass="title-left">
+                    <children>
+                        <HBox fx:id="titleIconBox" spacing="8.0" alignment="CENTER_LEFT"/>
+                        <Label styleClass="title-label" text="回单采集终端"/>
+                        <Label styleClass="title-subtitle" text="Receipt Capture Agent"/>
+                    </children>
+                </HBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <!-- 状态指示灯 -->
-                <HBox spacing="15.0" alignment="CENTER_RIGHT">
+                <HBox spacing="0.0" alignment="CENTER_RIGHT" styleClass="title-action">
                     <children>
-                        <HBox spacing="6.0" alignment="CENTER_LEFT">
+                        <HBox spacing="8.0" alignment="CENTER_LEFT" styleClass="status-box">
                             <children>
-                                <Label text="设备:" styleClass="version-label"/>
-                                <Label fx:id="currentDeviceLabel" styleClass="version-label" text="GK122"/>
+                                <HBox fx:id="deviceIconBox" spacing="4.0" alignment="CENTER_LEFT"/>
+                                <Label text="设备:" styleClass="status-label"/>
+                                <Label fx:id="currentDeviceLabel" styleClass="status-value" text="Integrated Camera"/>
                             </children>
                         </HBox>
-                        <HBox spacing="6.0" alignment="CENTER_LEFT">
+                        <HBox spacing="8.0" alignment="CENTER_LEFT" styleClass="status-box">
                             <children>
-                                <Label text="状态:" styleClass="version-label"/>
-                                <Label fx:id="statusLabel" styleClass="version-label" text="就绪"/>
+                                <Label text="状态:" styleClass="status-label"/>
+                                <Label fx:id="statusLabel" styleClass="status-value status-ready" text="就绪"/>
                             </children>
                         </HBox>
                     </children>
                 </HBox>
-                <Button fx:id="settingsButton" mnemonicParsing="false" styleClass="icon-button" text="⚙️ 设置"/>
+                <Button fx:id="settingsButton" mnemonicParsing="false" styleClass="icon-button" prefWidth="90.0">
+                    <graphic>
+                        <HBox fx:id="settingsIconBox" spacing="4.0" alignment="CENTER"/>
+                    </graphic>
+                </Button>
             </children>
             <padding>
-                <Insets left="20.0" right="20.0" top="12.0" bottom="12.0"/>
+                <Insets left="0.0" right="0.0" top="0.0" bottom="0.0"/>
             </padding>
         </HBox>
 
@@ -41,19 +52,39 @@
         <HBox spacing="20.0" VBox.vgrow="ALWAYS">
             <children>
                 <!-- 左侧：实时影像 -->
-                <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                <VBox spacing="12.0" HBox.hgrow="ALWAYS">
                     <children>
-                        <!-- 标题 -->
-                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <!-- 标题和控制栏 -->
+                        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="control-bar">
                             <children>
-                                <Label styleClass="section-label" text="实时影像"/>
+                                <HBox spacing="8.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <HBox fx:id="videoIconBox" spacing="6.0" alignment="CENTER_LEFT"/>
+                                        <Label styleClass="section-label" text="实时影像"/>
+                                    </children>
+                                </HBox>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <ComboBox fx:id="deviceComboBox" prefWidth="180.0" promptText="选择设备"/>
-                                <Button fx:id="previewButton" mnemonicParsing="false"
-                                        styleClass="secondary-button" text="预览" prefWidth="80.0"/>
-                                <Button fx:id="resetButton" mnemonicParsing="false"
-                                        styleClass="secondary-button" text="重置" prefWidth="80.0" disable="true"/>
+                                <HBox spacing="10.0" alignment="CENTER_RIGHT">
+                                    <children>
+                                        <ComboBox fx:id="deviceComboBox" prefWidth="200.0" promptText="选择摄像头设备" styleClass="device-combo"/>
+                                        <Button fx:id="previewButton" mnemonicParsing="false"
+                                                styleClass="primary-button" prefWidth="100.0">
+                                            <graphic>
+                                                <HBox fx:id="previewIconBox" spacing="4.0" alignment="CENTER"/>
+                                            </graphic>
+                                        </Button>
+                                        <Button fx:id="resetButton" mnemonicParsing="false"
+                                                styleClass="secondary-button" prefWidth="100.0" disable="true">
+                                            <graphic>
+                                                <HBox fx:id="resetIconBox" spacing="4.0" alignment="CENTER"/>
+                                            </graphic>
+                                        </Button>
+                                    </children>
+                                </HBox>
                             </children>
+                            <padding>
+                                <Insets bottom="8.0"/>
+                            </padding>
                         </HBox>
                         
                         <!-- 影像容器 -->
@@ -64,24 +95,30 @@
                         </Pane>
                         
                         <!-- 进度条 -->
-                        <HBox alignment="CENTER_LEFT" spacing="8.0">
-                            <Label text="进度:" styleClass="control-label"/>
-                            <ProgressBar fx:id="progressBar" HBox.hgrow="ALWAYS" progress="0.0"/>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="progress-container">
+                            <children>
+                                <Label text="进度:" styleClass="control-label"/>
+                                <ProgressBar fx:id="progressBar" HBox.hgrow="ALWAYS" progress="0.0" prefHeight="8.0"/>
+                            </children>
+                            <padding>
+                                <Insets top="8.0"/>
+                            </padding>
                         </HBox>
                     </children>
                 </VBox>
 
                 <!-- 右侧：扫描历史和操作日志 -->
-                <VBox spacing="10.0" prefWidth="350.0" minWidth="300.0" VBox.vgrow="ALWAYS">
+                <VBox spacing="12.0" prefWidth="380.0" minWidth="320.0" VBox.vgrow="ALWAYS">
                     <children>
                         <!-- 使用 SplitPane 分割，比例 2:1 -->
-                        <SplitPane dividerPositions="0.666" orientation="VERTICAL" VBox.vgrow="ALWAYS">
+                        <SplitPane dividerPositions="0.65" orientation="VERTICAL" VBox.vgrow="ALWAYS">
                             <items>
-                                <!-- 扫描历史（占2/3） -->
-                                <VBox spacing="8.0">
+                                <!-- 扫描历史（占65%） -->
+                                <VBox spacing="10.0">
                                     <children>
                                         <HBox alignment="CENTER_LEFT" spacing="8.0">
                                             <children>
+                                                <HBox fx:id="historyIconBox" spacing="6.0" alignment="CENTER_LEFT"/>
                                                 <Label styleClass="section-label" text="扫描历史"/>
                                                 <Region HBox.hgrow="ALWAYS"/>
                                             </children>
@@ -103,11 +140,12 @@
                                     </children>
                                 </VBox>
                                 
-                                <!-- 操作日志（占1/3） -->
-                                <VBox spacing="8.0">
+                                <!-- 操作日志（占35%） -->
+                                <VBox spacing="10.0">
                                     <children>
                                         <HBox alignment="CENTER_LEFT" spacing="8.0">
                                             <children>
+                                                <HBox fx:id="logIconBox" spacing="6.0" alignment="CENTER_LEFT"/>
                                                 <Label styleClass="section-label" text="操作日志"/>
                                                 <Region HBox.hgrow="ALWAYS"/>
                                             </children>
@@ -115,7 +153,7 @@
                                         
                                         <!-- 操作日志文本区域 -->
                                         <TextArea fx:id="statusArea" editable="false" wrapText="true"
-                                                  styleClass="text-area" VBox.vgrow="ALWAYS"/>
+                                                  styleClass="log-text-area" VBox.vgrow="ALWAYS"/>
                                     </children>
                                 </VBox>
                             </items>
@@ -129,6 +167,6 @@
         </HBox>
     </children>
     <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0"/>
     </padding>
 </VBox>

@@ -39,7 +39,7 @@ public class StatusUpdateManager {
     private int highFrequencyUpdateCount = 0;
     private String lastHighFrequencyMessage = "";
 
-    // 更新间隔（毫秒）
+    // 更新间隔（毫秒）：200-500ms 之间，选择 300ms 作为平衡点
     private static final long UPDATE_INTERVAL_MS = 300;
     private static final int MAX_BATCH_SIZE = 10; // 最多批量显示 10 条消息
 
@@ -190,21 +190,33 @@ public class StatusUpdateManager {
 
     /**
      * 更新状态标签
+     * 统一方法更新状态，根据消息内容判断状态类型，并应用相应的 CSS 类
      */
     private void updateStatusLabel(String message) {
-        if (statusLabel == null) {
+        if (statusLabel == null || message == null) {
             return;
         }
 
-        // 根据消息内容更新状态标签
+        // 清除所有状态样式类
+        statusLabel.getStyleClass().removeAll("status-ready", "status-success", "status-error", 
+                                               "status-processing", "status-preview");
+
+        // 根据消息内容更新状态标签（按优先级判断）
         if (message.contains("✓") || message.contains("成功")) {
             statusLabel.setText("成功");
-        } else if (message.contains("✗") || message.contains("失败")) {
+            statusLabel.getStyleClass().add("status-success");
+        } else if (message.contains("✗") || message.contains("失败") || message.contains("错误")) {
             statusLabel.setText("错误");
-        } else if (message.contains("正在") || message.contains("处理")) {
+            statusLabel.getStyleClass().add("status-error");
+        } else if (message.contains("正在") || message.contains("处理中") || message.contains("处理")) {
             statusLabel.setText("处理中");
-        } else if (message.contains("预览")) {
+            statusLabel.getStyleClass().add("status-processing");
+        } else if (message.contains("预览") && (message.contains("启动") || message.contains("中"))) {
             statusLabel.setText("预览中");
+            statusLabel.getStyleClass().add("status-preview");
+        } else if (message.contains("就绪") || message.contains("已就绪")) {
+            statusLabel.setText("就绪");
+            statusLabel.getStyleClass().add("status-ready");
         }
         // 其他情况不更新，保持当前状态
     }

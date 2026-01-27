@@ -44,8 +44,8 @@ public class PreviewManager {
     // 直接使用数组包装的 IntBuffer（零拷贝，减少内存分配）
     private int[] pixelArray = null;
 
-    // 预览状态标志
-    private volatile boolean isPreviewActive = false;
+    // 预览状态（使用枚举管理）
+    private volatile PreviewState previewState = PreviewState.STOPPED;
     
     // UI 更新标志（避免重复更新）
     private volatile boolean uiInitialized = false;
@@ -96,7 +96,7 @@ public class PreviewManager {
         updateUIForStart(statusCallback);
 
         // 2. 状态管理
-        isPreviewActive = true;
+        previewState = PreviewState.RUNNING;
         uiInitialized = false;
         // 注意：不清空 PixelBuffer，保留缓存以便复用
 
@@ -105,7 +105,7 @@ public class PreviewManager {
 
         if (!success) {
             // 启动失败，重置状态
-            isPreviewActive = false;
+            previewState = PreviewState.STOPPED;
             if (statusCallback != null) {
                 statusCallback.onStatus("✗ 无法启动实时预览，请检查设备选择");
             }
@@ -115,10 +115,10 @@ public class PreviewManager {
 
     /**
      * 更新 UI 状态（启动预览时）
+     * 注意：按钮状态由 MainController 统一管理，这里只负责清空图像
      */
     private void updateUIForStart(StatusCallback statusCallback) {
         Platform.runLater(() -> {
-            previewButton.setDisable(true);
             // 清空当前图片，为新预览做准备
             imageView.setImage(null);
         });
@@ -136,7 +136,7 @@ public class PreviewManager {
             @Override
             public void onFrame(int[] pixels, int w, int h, long captureTimeNanos) {
                 if (pixels == null || w <= 0 || h <= 0) return;
-                if (!isPreviewActive) return; // 如果预览已停止，忽略后续帧
+                if (previewState != PreviewState.RUNNING) return; // 如果预览已停止，忽略后续帧
 
                 // 通知外部组件处理帧（如自动采集服务）- 在后台线程执行
                 if (frameCallback != null) {
@@ -267,15 +267,22 @@ public class PreviewManager {
             } catch (Exception ignore) {
             }
 
-            // 更新按钮状态（只需更新一次）
+            // 更新按钮状态（只需更新一次，确保按钮文本和状态正确）
+            // 注意：设备选择下拉框的禁用/启用由 MainController 管理
+            // 但这里需要确保按钮状态正确，以防 MainController 的设置被覆盖
             if (!"停止预览".equals(previewButton.getText())) {
                 previewButton.setText("停止预览");
-                previewButton.setDisable(false);
-                resetButton.setDisable(false);
+            }
+            // 确保按钮可用（MainController 已经设置，但这里作为保险）
+            previewButton.setDisable(false);
+            resetButton.setDisable(false);
 
-                if (statusLabel != null) {
-                    statusLabel.setText("预览中");
-                }
+            if (statusLabel != null) {
+                statusLabel.setText("预览中");
+                // 清除所有状态样式类，应用预览样式
+                statusLabel.getStyleClass().removeAll("status-ready", "status-success", "status-error", 
+                                                      "status-processing", "status-preview");
+                statusLabel.getStyleClass().add("status-preview");
             }
 
             uiInitialized = true;
@@ -302,7 +309,7 @@ public class PreviewManager {
      */
     public void stopPreview(StatusCallback statusCallback) {
         // 1. 状态管理：先停止接收新帧
-        isPreviewActive = false;
+        previewState = PreviewState.STOPPED;
         uiInitialized = false;
 
         // 2. 摄像头调用：停止流
@@ -341,6 +348,7 @@ public class PreviewManager {
 
     /**
      * 重置预览按钮状态
+     * 注意：设备选择下拉框的禁用/启用由 MainController 管理
      */
     private void resetPreviewButton() {
         Platform.runLater(() -> {
@@ -349,6 +357,10 @@ public class PreviewManager {
             resetButton.setDisable(true);
             if (statusLabel != null) {
                 statusLabel.setText("就绪");
+                // 清除所有状态样式类，应用就绪样式
+                statusLabel.getStyleClass().removeAll("status-ready", "status-success", "status-error", 
+                                                      "status-processing", "status-preview");
+                statusLabel.getStyleClass().add("status-ready");
             }
         });
     }
@@ -357,7 +369,14 @@ public class PreviewManager {
      * 检查预览是否激活
      */
     public boolean isPreviewActive() {
-        return isPreviewActive;
+        return previewState == PreviewState.RUNNING;
+    }
+
+    /**
+     * 获取当前预览状态
+     */
+    public PreviewState getPreviewState() {
+        return previewState;
     }
 
     /**

@@ -28,7 +28,7 @@ public class HistoryManager {
     private static final Logger logger = LoggerFactory.getLogger(HistoryManager.class);
 
     private final FlowPane successListContainer;
-    private static final int MAX_HISTORY_ITEMS = 30;
+    private static final int MAX_HISTORY_ITEMS = 50; // 限制为 50 条
 
     public HistoryManager(FlowPane successListContainer) {
         this.successListContainer = successListContainer;
@@ -59,14 +59,14 @@ public class HistoryManager {
                 // 创建历史记录条目容器（垂直布局：缩略图在上，单号在下）
                 VBox historyItem = createHistoryItem(barcode, timestamp, imagePath, uploadUrl, mainWindow);
 
+                // 限制最大显示数量（保留最近50条）
+                // 超过限制时删除最旧条目（从末尾删除）
+                if (successListContainer.getChildren().size() >= MAX_HISTORY_ITEMS) {
+                    successListContainer.getChildren().remove(MAX_HISTORY_ITEMS - 1);
+                }
+
                 // 添加到列表顶部（最新的在最上面）
                 successListContainer.getChildren().add(0, historyItem);
-
-                // 限制最大显示数量（保留最近30条）
-                if (successListContainer.getChildren().size() > MAX_HISTORY_ITEMS) {
-                    successListContainer.getChildren().remove(MAX_HISTORY_ITEMS,
-                            successListContainer.getChildren().size());
-                }
 
             } catch (Exception e) {
                 logger.error("显示上传成功提示失败", e);

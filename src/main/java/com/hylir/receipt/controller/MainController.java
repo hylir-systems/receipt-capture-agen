@@ -5,6 +5,7 @@ import com.hylir.receipt.service.BarcodeRecognitionService;
 import com.hylir.receipt.service.CameraService;
 import com.hylir.receipt.service.UploadService;
 import com.hylir.receipt.service.autocapture.CapturePipeline;
+import com.hylir.receipt.util.IconFactory;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -13,7 +14,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.Node;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -57,6 +60,22 @@ public class MainController implements Initializable {
     private Button settingsButton;
     @FXML
     private FlowPane successListContainer;
+    @FXML
+    private HBox titleIconBox;
+    @FXML
+    private HBox deviceIconBox;
+    @FXML
+    private HBox videoIconBox;
+    @FXML
+    private HBox historyIconBox;
+    @FXML
+    private HBox logIconBox;
+    @FXML
+    private HBox previewIconBox;
+    @FXML
+    private HBox resetIconBox;
+    @FXML
+    private HBox settingsIconBox;
 
     // 服务组件
     private CameraService cameraService;
@@ -175,7 +194,94 @@ public class MainController implements Initializable {
         resetButton.setOnAction(e -> handleReset());
         settingsButton.setOnAction(e -> handleSettings());
 
+        // 初始化按钮状态
+        previewButton.setText("预览");
+        previewButton.setDisable(false);
+        resetButton.setText("重置");
+        resetButton.setDisable(true); // 初始状态：预览未启动，重置按钮禁用
+        deviceComboBox.setDisable(false); // 初始状态：设备选择可用
+        settingsButton.setText("设置");
+        settingsButton.setDisable(false); // 设置按钮始终可用
+
+        // 初始化彩色图标
+        initializeIcons();
+
+        // 初始化状态标签样式
+        if (statusLabel != null) {
+            statusLabel.setText("就绪");
+            statusLabel.getStyleClass().removeAll("status-ready", "status-success", "status-error", 
+                                                  "status-processing", "status-preview");
+            statusLabel.getStyleClass().add("status-ready");
+        }
+
         appendStatus("应用已就绪");
+    }
+
+    /**
+     * 初始化彩色图标
+     */
+    private void initializeIcons() {
+        Platform.runLater(() -> {
+            try {
+                // 标题图标
+                if (titleIconBox != null) {
+                    titleIconBox.getChildren().clear();
+                    Node docIcon = IconFactory.createDocumentIcon(16);
+                    titleIconBox.getChildren().add(docIcon);
+                }
+
+                // 设备图标
+                if (deviceIconBox != null) {
+                    deviceIconBox.getChildren().clear();
+                    Node cameraIcon = IconFactory.createCameraIcon(18);
+                    deviceIconBox.getChildren().add(cameraIcon);
+                }
+
+                // 视频图标
+                if (videoIconBox != null) {
+                    videoIconBox.getChildren().clear();
+                    Node videoIcon = IconFactory.createCameraIcon(18);
+                    videoIconBox.getChildren().add(videoIcon);
+                }
+
+                // 历史图标
+                if (historyIconBox != null) {
+                    historyIconBox.getChildren().clear();
+                    Node listIcon = IconFactory.createListIcon(18);
+                    historyIconBox.getChildren().add(listIcon);
+                }
+
+                // 日志图标
+                if (logIconBox != null) {
+                    logIconBox.getChildren().clear();
+                    Node logIcon = IconFactory.createLogIcon(18);
+                    logIconBox.getChildren().add(logIcon);
+                }
+
+                // 预览按钮图标
+                if (previewIconBox != null) {
+                    previewIconBox.getChildren().clear();
+                    Node playIcon = IconFactory.createPlayIcon(18);
+                    previewIconBox.getChildren().add(playIcon);
+                }
+
+                // 重置按钮图标
+                if (resetIconBox != null) {
+                    resetIconBox.getChildren().clear();
+                    Node resetIcon = IconFactory.createResetIcon(14);
+                    resetIconBox.getChildren().add(resetIcon);
+                }
+
+                // 设置按钮图标
+                if (settingsIconBox != null) {
+                    settingsIconBox.getChildren().clear();
+                    Node settingsIcon = IconFactory.createSettingsIcon(14);
+                    settingsIconBox.getChildren().add(settingsIcon);
+                }
+            } catch (Exception e) {
+                logger.error("初始化图标失败", e);
+            }
+        });
     }
 
     /**
@@ -241,16 +347,21 @@ public class MainController implements Initializable {
             }
             if (statusLabel != null) {
                 statusLabel.setText("就绪");
+                // 清除所有状态样式类，应用就绪样式
+                statusLabel.getStyleClass().removeAll("status-ready", "status-success", "status-error", 
+                                                      "status-processing", "status-preview");
+                statusLabel.getStyleClass().add("status-ready");
             }
         });
     }
 
     /**
      * 处理预览按钮点击
+     * 根据预览状态切换按钮文本和行为
      */
     @FXML
     private void handlePreview() {
-        if ("预览".equals(previewButton.getText())) {
+        if (previewManager.getPreviewState() == PreviewState.STOPPED) {
             // 开始实时预览
             startPreview();
         } else {
@@ -263,7 +374,15 @@ public class MainController implements Initializable {
      * 开始实时预览
      */
     private void startPreview() {
-        // 重新启用自动采集服务
+        // 更新按钮状态：禁用设备选择，切换预览按钮文本
+        Platform.runLater(() -> {
+            previewButton.setText("停止预览");
+            previewButton.setDisable(false);
+            deviceComboBox.setDisable(true); // 启动预览时禁用设备选择
+            resetButton.setDisable(false); // 重置按钮仅在预览运行时可用
+        });
+
+        // 启用自动采集服务
         if (autoCaptureController != null) {
             autoCaptureController.enable();
         }
@@ -286,6 +405,14 @@ public class MainController implements Initializable {
         if (autoCaptureController != null) {
             autoCaptureController.disable();
         }
+
+        // 更新按钮状态：启用设备选择，切换预览按钮文本
+        Platform.runLater(() -> {
+            previewButton.setText("预览");
+            previewButton.setDisable(false);
+            deviceComboBox.setDisable(false); // 停止预览时启用设备选择
+            resetButton.setDisable(true); // 停止预览时禁用重置按钮
+        });
 
         // 使用预览管理器停止预览（使用状态更新管理器节流）
         previewManager.stopPreview(statusUpdateManager::appendStatus);
