@@ -62,7 +62,9 @@ public class A4PaperDetectorHighCamera {
         Mat ordered  = orderPoints(bestQuad);
 
         // 7. 透视变换
-        return warp(src, ordered);
+        Mat warped = warp(src, ordered);
+
+        return warped;
     }
 
     /**
@@ -189,7 +191,76 @@ public class A4PaperDetectorHighCamera {
                 new Size(maxW, maxH)
         );
 
+        // 如果高度小于 800，从中心点裁剪 1200*900 的区域
+        if (maxH < 800) {
+            warped = cropCenterRegion(src, 1200, 900);
+        }
+
         return warped;
+    }
+
+    /**
+     * 从图像中心点裁剪指定大小的区域
+     * 
+     * @param src 源图像
+     * @param targetWidth 目标宽度
+     * @param targetHeight 目标高度
+     * @return 裁剪后的图像，如果源图像小于目标尺寸则返回原图
+     */
+    private static Mat cropCenterRegion(Mat src, int targetWidth, int targetHeight) {
+        if (src == null || src.empty()) {
+            return src;
+        }
+
+        int srcWidth = src.cols();
+        int srcHeight = src.rows();
+
+        // 如果源图像小于目标尺寸，返回原图
+        if (srcWidth < targetWidth || srcHeight < targetHeight) {
+            return src;
+        }
+
+        // 计算中心点
+        int centerX = srcWidth / 2;
+        int centerY = srcHeight / 2;
+
+        // 计算裁剪区域的起始点（从中心点向四周扩展）
+        int startX = centerX - targetWidth / 2;
+        int startY = centerY - targetHeight / 2;
+
+        // 确保不越界
+        startX = Math.max(0, startX);
+        startY = Math.max(0, startY);
+        
+        // 确保裁剪区域不超出图像边界
+        int endX = Math.min(srcWidth, startX + targetWidth);
+        int endY = Math.min(srcHeight, startY + targetHeight);
+        
+        // 如果调整后尺寸不足，重新计算起始点
+        if (endX - startX < targetWidth) {
+            startX = srcWidth - targetWidth;
+            startX = Math.max(0, startX);
+        }
+        if (endY - startY < targetHeight) {
+            startY = srcHeight - targetHeight;
+            startY = Math.max(0, startY);
+        }
+
+        // 创建裁剪区域（Rect: x, y, width, height）
+        Rect cropRect = new Rect(startX, startY, targetWidth, targetHeight);
+        
+        // 裁剪图像
+        Mat cropped = new Mat(src, cropRect);
+        
+        // 如果裁剪后的尺寸不匹配，创建新 Mat 并复制
+        if (cropped.cols() != targetWidth || cropped.rows() != targetHeight) {
+            Mat result = new Mat();
+            cropped.copyTo(result);
+            cropped.close();
+            return result;
+        }
+
+        return cropped;
     }
     /**
      * 简单 main 测试

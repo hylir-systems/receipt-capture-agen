@@ -5,11 +5,13 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Receipt Capture Agent 主应用类
@@ -41,6 +43,17 @@ public class ReceiptCaptureApplication extends Application {
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(600);
             primaryStage.setMinHeight(400);
+
+            // 设置窗口图标
+            try (InputStream iconStream = getClass().getResourceAsStream("/assets/windows.png")) {
+                if (iconStream != null) {
+                    Image icon = new Image(iconStream);
+                    primaryStage.getIcons().add(icon);
+                }
+            } catch (IOException e) {
+                logger.warn("加载窗口图标失败", e);
+            }
+
             // 启动时默认最大化窗口，便于操作与预览
             primaryStage.setMaximized(true);
             primaryStage.show();

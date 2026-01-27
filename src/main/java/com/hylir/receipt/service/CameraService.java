@@ -80,11 +80,13 @@ public class CameraService {
 
     /**
      * 选择摄像头设备
+     * 如果设备索引与当前已选择的设备相同，则跳过选择，避免重复初始化
      *
      * @param index 设备索引
+     * @return true 如果实际执行了选择操作，false 如果跳过（已是当前设备）
      */
-    public void selectDevice(int index) {
-        deviceManager.selectDevice(index);
+    public boolean selectDevice(int index) {
+        return deviceManager.selectDevice(index);
     }
 
     /**

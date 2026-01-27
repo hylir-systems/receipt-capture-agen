@@ -52,13 +52,22 @@ public class CameraDeviceManager {
 
     /**
      * 选择摄像头设备
+     * 如果设备索引与当前已选择的设备相同，则跳过选择，避免重复初始化
      *
      * @param deviceIndex 设备索引
+     * @return true 如果实际执行了选择操作，false 如果跳过（已是当前设备）
      */
-    public void selectDevice(int deviceIndex) {
-        logger.info("选择摄像头设备索引: {}", deviceIndex);
+    public boolean selectDevice(int deviceIndex) {
+        // 避免重复初始化：如果选择的设备已经是当前设备，则跳过
+        if (deviceIndex == selectedDeviceIndex) {
+            logger.debug("设备索引 {} 已是当前设备，跳过选择", deviceIndex);
+            return false;
+        }
+
+        logger.info("选择摄像头设备索引: {} (之前: {})", deviceIndex, selectedDeviceIndex);
         this.selectedDeviceIndex = deviceIndex;
         logger.info("已选择摄像头索引: {}", deviceIndex);
+        return true;
     }
 
     /**

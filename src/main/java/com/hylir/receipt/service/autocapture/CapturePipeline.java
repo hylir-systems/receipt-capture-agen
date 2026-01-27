@@ -73,7 +73,7 @@ public class CapturePipeline {
             }
 
             // 4. 条码识别
-            String barcode = barcodeService.recognize(originalImage, 3);
+            String barcode = barcodeService.recognize(correctedImage, 3);
             if (barcode == null || barcode.trim().isEmpty()) {
                 return CaptureResult.failure("条码识别失败");
             }
