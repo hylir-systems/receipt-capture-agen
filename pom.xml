@@ -3,7 +3,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.hylir.receipt</groupId>
@@ -16,8 +15,8 @@
 
     <!-- ================== 全局属性 ================== -->
     <properties>
-        <!-- Java -->
         <java.version>17</java.version>
+        <javafx.version>17.0.18</javafx.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -26,7 +25,7 @@
         <okhttp.version>4.12.0</okhttp.version>
         <jackson.version>2.15.3</jackson.version>
 
-        <!-- JavaCV 版本（三件套必须一致） -->
+        <!-- JavaCV / OpenCV / FFmpeg -->
         <javacv.version>1.5.10</javacv.version>
         <opencv.version>4.9.0-1.5.10</opencv.version>
         <ffmpeg.version>6.1.1-1.5.10</ffmpeg.version>
@@ -34,16 +33,12 @@
         <!-- 日志 -->
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.11</logback.version>
-
-        <!-- JavaFX -->
-        <javafx.version>21.0.2</javafx.version>
-        <javafx.platform>win</javafx.platform>
     </properties>
 
     <!-- ================== 依赖 ================== -->
     <dependencies>
 
-        <!-- ===== ZXing 条码识别 ===== -->
+        <!-- 条码识别 -->
         <dependency>
             <groupId>com.aspose</groupId>
             <artifactId>aspose-barcode</artifactId>
@@ -60,20 +55,19 @@
             <version>${zxing.version}</version>
         </dependency>
 
+        <!-- HTTP / JSON -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
         </dependency>
-
-        <!-- ===== JSON ===== -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
 
-        <!-- ===== 日志 ===== -->
+        <!-- 日志 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -85,157 +79,63 @@
             <version>${logback.version}</version>
         </dependency>
 
-        <!-- ===== JavaCV / OpenCV / FFmpeg（仅 Windows x86_64 平台）===== -->
-        <!-- 注意：每个依赖都明确指定 windows-x86_64 classifier，避免引入其他平台 -->
-        <!-- JavaCV 核心库（包含 Java2DFrameConverter、OpenCVFrameConverter 等） -->
+        <!-- JavaCV / OpenCV / FFmpeg / videoinput 平台 DLL -->
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>javacv</artifactId>
+            <artifactId>javacv-platform</artifactId>
             <version>${javacv.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>javacpp</artifactId>
-            <version>${javacv.version}</version>
-            <exclusions>
-                <!-- 排除不需要的相机库 -->
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>flycapture</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>libdc1394</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>libfreenect</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>libfreenect2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>librealsense</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>librealsense2</artifactId>
-                </exclusion>
-                <!-- 注意：videoinput 在 Windows 上用于枚举摄像头设备，不能排除 -->
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>artoolkitplus</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>opencv-platform</artifactId>
+            <version>${opencv.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>javacpp</artifactId>
-            <version>${javacv.version}</version>
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>ffmpeg</artifactId>
+            <artifactId>ffmpeg-platform</artifactId>
             <version>${ffmpeg.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>ffmpeg</artifactId>
-            <version>${ffmpeg.version}</version>
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>opencv</artifactId>
-            <version>${opencv.version}</version>
-            <exclusions>
-                <!-- 排除不需要的 OCR 库 -->
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>leptonica</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bytedeco</groupId>
-                    <artifactId>tesseract</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>opencv</artifactId>
-            <version>${opencv.version}</version>
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>openblas</artifactId>
-            <version>0.3.26-1.5.10</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>openblas</artifactId>
-            <version>0.3.26-1.5.10</version>
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <!-- videoinput 用于 Windows 平台枚举摄像头设备 -->
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>videoinput</artifactId>
+            <artifactId>videoinput-platform</artifactId>
             <version>0.200-1.5.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>videoinput</artifactId>
-            <version>0.200-1.5.9</version>
-            <classifier>windows-x86_64</classifier>
         </dependency>
 
-        <!-- ===== JavaFX（Maven 管理，Windows）===== -->
+        <!-- JavaFX 17 -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17.0.10</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>17.0.10</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
-            <version>17.0.10</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-media</artifactId>
-            <version>17.0.10</version>
+            <version>${javafx.version}</version>
         </dependency>
 
-        <!-- ===== Ikonli 图标库 ===== -->
+        <!-- Ikonli 图标库 -->
         <dependency>
             <groupId>org.kordamp.ikonli</groupId>
             <artifactId>ikonli-javafx</artifactId>
             <version>12.3.1</version>
         </dependency>
-        <!-- FontAwesome 图标集 -->
         <dependency>
             <groupId>org.kordamp.ikonli</groupId>
             <artifactId>ikonli-fontawesome5-pack</artifactId>
             <version>12.3.1</version>
         </dependency>
-        <!-- Material Design 图标集（可选） -->
-        <dependency>
-            <groupId>org.kordamp.ikonli</groupId>
-            <artifactId>ikonli-materialdesign2-pack</artifactId>
-            <version>12.3.1</version>
-        </dependency>
 
-
-        <!-- ===== 测试 ===== -->
+        <!-- 测试 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -246,6 +146,7 @@
 
     <!-- ================== 构建 ================== -->
     <build>
+
         <plugins>
 
             <!-- Java 编译 -->
@@ -255,21 +156,10 @@
                 <version>3.11.0</version>
                 <configuration>
                     <release>${java.version}</release>
-                    <!-- 确保包含调试信息 -->
-                    <debug>true</debug>
-                    <debuglevel>lines,vars,source</debuglevel>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.8</version>
-                <configuration>
-                    <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
                 </configuration>
             </plugin>
 
-            <!-- 打包 fat-jar（可直接运行） -->
+            <!-- 打包所有依赖到一个可执行的 fat jar（包含 javacv / opencv / ffmpeg 等） -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -282,87 +172,79 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <!-- 减少警告输出 -->
-                            <failsafeDependencyReducedPom>false</failsafeDependencyReducedPom>
+                            <!-- 这些 Bytedeco 依赖里有很多重复的 META-INF/maven 资源和 module-info.class，
+                                 对运行没有影响，只是 Shade 会发 WARNING；这里直接排除它们，避免噪音或潜在冲突 -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/maven/**</exclude>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/**/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
                                 </transformer>
                             </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <!-- 签名文件 -->
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <!-- 许可证文件 -->
-                                        <exclude>META-INF/LICENSE*</exclude>
-                                        <exclude>META-INF/NOTICE*</exclude>
-                                        <!-- 模块信息（Shade 会破坏模块封装，排除避免警告） -->
-                                        <exclude>META-INF/versions.*/module-info.class</exclude>
-                                        <exclude>module-info.class</exclude>
-                                        <!-- Maven 元数据（重复资源，只保留一个） -->
-                                        <exclude>META-INF/maven/**/pom.properties</exclude>
-                                        <exclude>META-INF/maven/**/pom.xml</exclude>
-                                        <!-- Kotlin 模块信息（重复资源，只保留一个） -->
-                                        <exclude>META-INF/okio.kotlin_module</exclude>
-                                        <!-- Native Image 配置（只保留 Windows 平台） -->
-                                        <exclude>META-INF/native-image/android*/**</exclude>
-                                        <exclude>META-INF/native-image/ios*/**</exclude>
-                                        <exclude>META-INF/native-image/linux*/**</exclude>
-                                        <exclude>META-INF/native-image/macosx*/**</exclude>
-                                        <!-- Substrate 配置（非 Windows 平台） -->
-                                        <exclude>META-INF/substrate/config/reflectionconfig-aarch64-android.json</exclude>
-                                        <exclude>META-INF/substrate/config/reflectionconfig-arm64-ios.json</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- 测试 -->
+            <!-- JavaFX 开发期 mvn javafx:run -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
+                </configuration>
             </plugin>
 
-            <!-- jpackage 打包为 Windows EXE 安装包 -->
+            <!-- jpackage 打包 Windows EXE -->
             <plugin>
                 <groupId>org.panteleyev</groupId>
                 <artifactId>jpackage-maven-plugin</artifactId>
                 <version>1.7.1</version>
                 <configuration>
-                    <!-- 安装包类型 -->
-                    <type>exe</type>
+                    <!-- 打包类型 -->
+                    <type>EXE</type>
 
-                    <!-- 安装包基础配置 -->
-                    <name>Receipt Capture Agent</name>
+                    <!-- 应用信息 -->
+                    <name>ReceiptCaptureAgent</name>
                     <appVersion>${project.version}</appVersion>
                     <vendor>Hylir</vendor>
-                    <description>回单采集终端 - 高拍仪拍照和条码识别桌面应用</description>
-                    <copyright>Copyright © 2024 Hylir</copyright>
-
-                    <!-- 资源文件目录 -->
-                    <resourceDir>src/main/jpackage</resourceDir>
-
-                    <!-- 应用图标 -->
                     <icon>src/main/jpackage/windows.ico</icon>
 
-                    <!-- 输入：使用 shade 生成的 JAR -->
-                    <input>target/${project.build.finalName}.jar</input>
+                    <!-- 输入和主 Jar：使用 shade 后的 fat jar，里面已经包含 javacv/opencv/ffmpeg 等所有依赖 -->
+                    <input>${project.build.directory}</input>
+                    <mainJar>${project.build.finalName}.jar</mainJar>
+                    <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
 
-                    <!-- Java 启动参数 -->
+                    <!-- JVM 运行参数 -->
                     <javaOptions>
-                        <option>--add-opens java.base/java.lang=ALL-UNNAMED</option>
-                        <option>--add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
-                        <option>--add-opens javafx.graphics/com.sun.glass.utils=ALL-UNNAMED</option>
+                        <option>-Xms256m</option>
+                        <option>-Xmx1024m</option>
+                        <option>--add-modules=javafx.controls,javafx.fxml,javafx.swing,javafx.media</option>
+                        <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                        <option>--add-opens=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                        <option>--add-opens=javafx.graphics/com.sun.glass.utils=ALL-UNNAMED</option>
                     </javaOptions>
-                    <destination/>
+
+                    <!-- Windows 特定选项 -->
+                    <winMenu>true</winMenu>
+                    <winShortcut>true</winShortcut>
+                    <winDirChooser>true</winDirChooser>
+                    <winShortcutPrompt>true</winShortcutPrompt>
+                    <!-- 便于调试：运行时弹出控制台窗口，看到异常日志 -->
+                    <winConsole>true</winConsole>
+
+                    <!-- 输出目录 -->
+                    <destination>${project.build.directory}/jpackage</destination>
+
                 </configuration>
             </plugin>
 
@@ -371,21 +253,28 @@
 
     <!-- ================== 仓库 ================== -->
     <repositories>
-
-        <!-- 私服（如有） -->
+        <!-- 私服 -->
         <repository>
             <id>pb-central</id>
             <url>http://192.168.0.81:8081/repository/maven-public/</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>false</enabled></snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
 
         <!-- 阿里云 -->
         <repository>
             <id>aliyun</id>
             <url>https://maven.aliyun.com/repository/public</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>false</enabled></snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
 
         <!-- Maven Central -->
@@ -395,4 +284,3 @@
         </repository>
     </repositories>
 </project>
-

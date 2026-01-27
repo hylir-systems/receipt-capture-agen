@@ -12,8 +12,38 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <source>11</source>
-          <target>11</target>
+          <release>${java.version}</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.panteleyev</groupId>
+        <artifactId>jpackage-maven-plugin</artifactId>
+        <version>1.7.1</version>
+        <configuration>
+          <type>EXE</type>
+          <name>ReceiptCaptureAgent</name>
+          <appVersion>${project.version}</appVersion>
+          <vendor>Hylir</vendor>
+          <input>${project.build.directory}</input>
+          <mainJar>${project.build.finalName}.jar</mainJar>
+          <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
+          <icon>src/main/jpackage/windows.ico</icon>
+          <javaOptions>
+            <option>-Xms256m</option>
+            <option>-Xmx1024m</option>
+            <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+          </javaOptions>
+          <winMenu>true</winMenu>
+          <winShortcut>true</winShortcut>
+          <destination />
         </configuration>
       </plugin>
       <plugin>
@@ -31,16 +61,6 @@
                   <mainClass>com.hylir.receipt.ReceiptCaptureApplication</mainClass>
                 </transformer>
               </transformers>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
             </configuration>
           </execution>
         </executions>
@@ -49,36 +69,31 @@
   </build>
   <repositories>
     <repository>
-      <id>pb-central</id>
-      <name>public Repository</name>
-      <url>http://192.168.0.81:8081/repository/maven-public/</url>
-    </repository>
-    <repository>
       <releases />
-      <id>aliyun</id>
-      <name>Aliyun Maven</name>
-      <url>https://maven.aliyun.com/repository/public</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>pb-central</id>
+      <url>http://192.168.0.81:8081/repository/maven-public/</url>
     </repository>
     <repository>
       <releases />
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <id>central</id>
-      <name>Maven Central</name>
-      <url>https://repo.maven.apache.org/maven2</url>
+      <id>aliyun</id>
+      <url>https://maven.aliyun.com/repository/public</url>
     </repository>
     <repository>
-      <id>openjfx</id>
-      <name>OpenJFX Releases</name>
-      <url>https://oss.sonatype.org/content/groups/public/</url>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
     </repository>
   </repositories>
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.9.2</version>
+      <version>5.10.1</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -97,16 +112,17 @@
     </dependency>
   </dependencies>
   <properties>
-    <javafx.platform>win</javafx.platform>
-    <zxing.version>3.5.1</zxing.version>
-    <jackson.version>2.15.2</jackson.version>
-    <opencv.version>4.7.0-1.5.9</opencv.version>
+    <maven.compiler.release>${java.version}</maven.compiler.release>
+    <zxing.version>3.5.2</zxing.version>
+    <jackson.version>2.15.3</jackson.version>
+    <opencv.version>4.9.0-1.5.10</opencv.version>
+    <okhttp.version>4.12.0</okhttp.version>
+    <slf4j.version>2.0.9</slf4j.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <asprise.version>21.3</asprise.version>
-    <javafx.version>20.0.2</javafx.version>
-    <junit.version>5.9.2</junit.version>
-    <javacv.version>1.5.9</javacv.version>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <javafx.version>17.0.10</javafx.version>
+    <ffmpeg.version>6.1.1-1.5.10</ffmpeg.version>
+    <logback.version>1.4.11</logback.version>
+    <javacv.version>1.5.10</javacv.version>
+    <java.version>17</java.version>
   </properties>
 </project>

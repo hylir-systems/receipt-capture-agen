@@ -22,7 +22,12 @@ public class ConfigManager {
     // 默认值
     public static final String DEFAULT_BACKEND_URL = "http://117.143.214.90:3680/api";
     public static final String DEFAULT_UPLOAD_ENDPOINT = "/receipt/upload";
-    public static final String DEFAULT_A4_SAVE_FOLDER = "temp-images";
+    /**
+     * 默认 A4 保存目录：当前用户主目录下的 temp-images
+     * Windows 示例：C:\Users\<用户名>\temp-images
+     */
+    public static final String DEFAULT_A4_SAVE_FOLDER =
+            Paths.get(System.getProperty("user.home"), "temp-images").toString();
 
     private Properties properties;
     private Path configFilePath;

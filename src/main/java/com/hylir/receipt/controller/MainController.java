@@ -380,6 +380,13 @@ public class MainController implements Initializable {
             previewButton.setDisable(false);
             deviceComboBox.setDisable(true); // 启动预览时禁用设备选择
             resetButton.setDisable(false); // 重置按钮仅在预览运行时可用
+
+            // 切换预览按钮图标为红色停止图标
+            if (previewIconBox != null) {
+                previewIconBox.getChildren().clear();
+                Node stopIcon = IconFactory.createStopIcon(18);
+                previewIconBox.getChildren().add(stopIcon);
+            }
         });
 
         // 启用自动采集服务
@@ -412,6 +419,13 @@ public class MainController implements Initializable {
             previewButton.setDisable(false);
             deviceComboBox.setDisable(false); // 停止预览时启用设备选择
             resetButton.setDisable(true); // 停止预览时禁用重置按钮
+
+            // 切换预览按钮图标回播放图标
+            if (previewIconBox != null) {
+                previewIconBox.getChildren().clear();
+                Node playIcon = IconFactory.createPlayIcon(18);
+                previewIconBox.getChildren().add(playIcon);
+            }
         });
 
         // 使用预览管理器停止预览（使用状态更新管理器节流）

@@ -78,6 +78,13 @@ public class IconFactory {
     }
 
     /**
+     * 停止图标（红色实心方块）
+     */
+    public static Node createStopIcon(double size) {
+        return createIconWithBackground(FontAwesomeSolid.STOP, size, ERROR_COLOR);
+    }
+
+    /**
      * 设置图标
      */
     public static Node createSettingsIcon(double size) {
