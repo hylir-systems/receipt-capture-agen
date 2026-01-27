@@ -1,5 +1,6 @@
 package com.hylir.receipt.controller;
 
+import com.hylir.receipt.util.SoundPlayer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -67,6 +68,9 @@ public class HistoryManager {
 
                 // 添加到列表顶部（最新的在最上面）
                 successListContainer.getChildren().add(0, historyItem);
+
+                // 前端 UI 已完成插入历史卡片后，再播放成功提示音
+                SoundPlayer.playSuccess();
 
             } catch (Exception e) {
                 logger.error("显示上传成功提示失败", e);

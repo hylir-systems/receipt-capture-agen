@@ -213,6 +213,26 @@ public class AppConfig {
     }
 
     /**
+     * 是否保存条码识别调试图片（原图/裁剪图）到临时目录
+     */
+    public static boolean isBarcodeDebugSaveImagesEnabled() {
+        String v = properties.getProperty("barcode.debug.saveImages");
+        return v != null ? Boolean.parseBoolean(v) : false;
+    }
+
+    /**
+     * 条码识别调试图片保留时间（分钟）
+     */
+    public static int getBarcodeDebugKeepMinutes() {
+        String v = properties.getProperty("barcode.debug.keepMinutes");
+        try {
+            return v != null ? Integer.parseInt(v) : 2;
+        } catch (NumberFormatException e) {
+            return 2;
+        }
+    }
+
+    /**
      * 重新加载配置
      */
     public static void reloadConfig() {

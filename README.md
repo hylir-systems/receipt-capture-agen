@@ -93,10 +93,11 @@ src/main/resources/
    Main class: com.hylir.receipt.ReceiptCaptureApplication
 
    VM options:
-   --module-path "D:/workspace/crm/org/openjfx/javafx-controls/17.0.10/javafx-controls-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-fxml/17.0.10/javafx-fxml-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-swing/17.0.10/javafx-swing-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-graphics/17.0.10/javafx-graphics-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-base/17.0.10/javafx-base-17.0.10-win.jar"
-   --add-modules javafx.controls,javafx.fxml,javafx.swing
-   --add-opens java.base/java.lang=ALL-UNNAMED
-   --add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
+  --module-path "D:/workspace/crm/org/openjfx/javafx-controls/17.0.10/javafx-controls-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-fxml/17.0.10/javafx-fxml-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-swing/17.0.10/javafx-swing-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-graphics/17.0.10/javafx-graphics-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-base/17.0.10/javafx-base-17.0.10-win.jar;D:/workspace/crm/org/openjfx/javafx-media/17.0.10/javafx-media-17.0.10-win.jar"
+  --add-modules javafx.controls,javafx.fxml,javafx.swing,javafx.media
+  --add-opens java.base/java.lang=ALL-UNNAMED
+  --add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
+  --add-opens javafx.graphics/com.sun.glass.utils=ALL-UNNAMED
    ```
    ![img.png](img.png)
    也可以这样运行

@@ -209,6 +209,11 @@
             <artifactId>javafx-swing</artifactId>
             <version>17.0.10</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>17.0.10</version>
+        </dependency>
 
         <!-- ===== Ikonli 图标库 ===== -->
         <dependency>
@@ -355,6 +360,7 @@
                     <javaOptions>
                         <option>--add-opens java.base/java.lang=ALL-UNNAMED</option>
                         <option>--add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</option>
+                        <option>--add-opens javafx.graphics/com.sun.glass.utils=ALL-UNNAMED</option>
                     </javaOptions>
                     <destination/>
                 </configuration>

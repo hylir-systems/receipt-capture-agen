@@ -67,13 +67,12 @@ public class CapturePipeline {
 
             // 2. A4矫正（直接使用 pixels，避免不必要的转换）
             BufferedImage correctedImage = performA4Correction(pixels, width, height);
-
             if (correctedImage == null) {
                 correctedImage = originalImage; // 如果矫正失败，使用原图
             }
 
             // 4. 条码识别
-            String barcode = barcodeService.recognize(correctedImage, 3);
+            String barcode = barcodeService.recognize(originalImage, 3);
             if (barcode == null || barcode.trim().isEmpty()) {
                 return CaptureResult.failure("条码识别失败");
             }
@@ -106,6 +105,7 @@ public class CapturePipeline {
                             if (uploadSuccessCallback != null) {
                                 uploadSuccessCallback.onUploadSuccess(finalBarcode, finalFilePath, uploadUrl);
                             }
+
                         } else {
                             logger.warn("回单自动上传失败，单号: {}, 错误: {}", finalBarcode, uploadResult.getErrorMessage());
                         }

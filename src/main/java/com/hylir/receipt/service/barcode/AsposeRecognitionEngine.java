@@ -37,7 +37,7 @@ public class AsposeRecognitionEngine {
         try {
             BarCodeReader reader = new BarCodeReader(
                     image,
-                    DecodeType.ALL_SUPPORTED_TYPES
+                    DecodeType.CODE_128
             );
 
             // ⚠ 高拍仪 + 纸质回单，必须开这些
