@@ -172,10 +172,11 @@ mvn jpackage:jpackage
 
 ### 调试模式
 
-预览模式下会自动保存图片到临时目录：
-- `C:\Users\<用户名>\AppData\Local\Temp\receipt-capture\`
-- 包含原始帧图片 (`preview_raw_*.png`)
-- 包含 A4 矫正后图片 (`preview_corrected_*.png`)
+条码识别调试（可选，需在配置中启用）：
+- 如果启用了 `barcode.debug.saveImages=true`，条码识别时会保存调试图片到临时目录
+- 临时目录：`C:\Users\<用户名>\AppData\Local\Temp\receipt-capture\barcode-debug\`
+- 包含原始图片 (`barcode_orig_*.png`) 和裁剪后的图片 (`barcode_crop_tr_*.png`)
+- 自动清理：超过配置时间（默认 5 分钟）的文件会被自动删除
 
 ## 配置说明
 
